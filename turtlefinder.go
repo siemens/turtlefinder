@@ -132,6 +132,10 @@ func (f *TurtleFinder) Containers(
 		allEngines = append(allEngines, slices.Clone(engines)...)
 	}
 	f.mux.Unlock()
+	allcontainers := []*model.Container{}
+	if len(allEngines) == 0 {
+		return allcontainers
+	}
 	// Feel the heat and query the engines in parallel; to collect the results
 	// we use a buffered channel of the size equal the number of engines to
 	// query. Please note that the number of parallel engine queries is bounded
@@ -139,7 +143,6 @@ func (f *TurtleFinder) Containers(
 	// call.
 	log.Infof("consulting %d container engines ... in parallel", len(allEngines))
 	enginecontainers := make(chan []*model.Container, len(allEngines))
-	allcontainers := []*model.Container{}
 	var theendisnear atomic.Int64 // track amount of engine results
 	theendisnear.Add(int64(len(allEngines)))
 	for _, engine := range allEngines {

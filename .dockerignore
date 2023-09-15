@@ -1,8 +1,0 @@
-.git/
-.github/
-.vscode/
-
-dist/
-coverage.*
-__debug_bin
-scripts/

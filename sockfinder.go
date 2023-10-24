@@ -6,7 +6,6 @@ package turtlefinder
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -44,7 +43,7 @@ type socketPathsByIno map[uint64]string
 // mounted in the current mount namespace.
 func matchProcSox(pid model.PIDType, listeningSox socketPathsByIno) (socketpaths []string) {
 	fdbase := "/proc/" + strconv.FormatUint(uint64(pid), 10) + "/fd"
-	fdentries, err := ioutil.ReadDir(fdbase)
+	fdentries, err := os.ReadDir(fdbase)
 	if err != nil {
 		return
 	}
@@ -59,14 +58,18 @@ func matchProcSox(pid model.PIDType, listeningSox socketPathsByIno) (socketpaths
 	// points to (as usual, subject to the current mount namespace).
 	for _, fdentry := range fdentries {
 		fdlink, err := os.Readlink(fdbase + fdentry.Name())
-		if err == nil && strings.HasPrefix(fdlink, "socket:[") {
-			ino, err := strconv.ParseUint(fdlink[8:len(fdlink)-1], 10, 64)
-			if err == nil {
-				if soxpath, ok := listeningSox[ino]; ok {
-					socketpaths = append(socketpaths, soxpath)
-				}
-			}
+		if err != nil || !strings.HasPrefix(fdlink, "socket:[") {
+			continue
 		}
+		ino, err := strconv.ParseUint(fdlink[8:len(fdlink)-1], 10, 64)
+		if err != nil {
+			continue
+		}
+		soxpath, ok := listeningSox[ino]
+		if !ok {
+			continue
+		}
+		socketpaths = append(socketpaths, soxpath)
 	}
 	return
 }
@@ -110,7 +113,14 @@ func discoverListeningSox(pid model.PIDType) socketPathsByIno {
 	// -- this line of code generates a single line in /proc/net/unix.
 	soxscan := bufio.NewScanner(uf)
 	for soxscan.Scan() {
-		fields := strings.Split(soxscan.Text(), " ")
+		// For increased "fun", the Linux kernel sometimes spearates (certain?)
+		// fields by multiple whitespaces when the field contents are "narrow".
+		// For instance, the inode number is smaller than 5 digits. Now, many
+		// inode numbers are actually 6 digits and more, so this padding might
+		// be some ancient leftover. Yet, it laid a trap undetected in this code
+		// for multiple years. The fix: use strings.Fields instead of
+		// strings.Split.
+		fields := strings.Fields(soxscan.Text())
 		if len(fields) < 8 {
 			continue
 		}

@@ -3,5 +3,9 @@
         {
             "path": "."
         }
-    ]
+    ],
+    "settings": {
+        "go.buildTags": "",
+        "go.testTags": "matchers"
+    }
 }

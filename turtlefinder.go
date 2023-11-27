@@ -13,10 +13,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/siemens/turtlefinder/activator"
 	"github.com/siemens/turtlefinder/detector"
-	_ "github.com/siemens/turtlefinder/detector/all" // pull in engine detector plugins
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/semaphore"
+
+	_ "github.com/siemens/turtlefinder/activator/all" // pull in activator and socket-activated engine detector plugins
+	_ "github.com/siemens/turtlefinder/detector/all"  // pull in engine detector plugins
 
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/containerizer"
@@ -43,32 +46,41 @@ type Contexter func() context.Context
 // and then tries to contact the potential engines in order to watch their
 // containers.
 type TurtleFinder struct {
-	contexter       Contexter           // contexts for workload watching.
-	engineplugins   []engineplugin      // static list of engine plugins.
-	numworkers      int                 // max number of parallel engine queries.
-	workersem       *semaphore.Weighted // bounded pool.
-	initialsyncwait time.Duration       // max. wait for engine watch coming online (sync) before proceeding.
+	contexter        Contexter           // contexts for workload watching.
+	engineplugins    []enginePlugin      // static list of engine plugins.
+	activatorplugins []activatorPlugin   // static list of activator plugins.
+	numworkers       int                 // max number of parallel engine queries.
+	workersem        *semaphore.Weighted // bounded pool.
+	initialsyncwait  time.Duration       // max. wait for engine watch coming online (sync) before proceeding.
 
-	mux     sync.Mutex                  // protects the following fields.
-	engines map[model.PIDType][]*Engine // engines by PID; individual engines may have failed.
+	mux        sync.Mutex                                // protects the following fields.
+	engines    map[model.PIDType][]*Engine               // engines by PID; individual engines may have failed.
+	activators map[model.PIDType]*socketActivatorProcess // socket activators we've found.
 }
 
 // TurtleFinder implements the lxkns Containerizer interface.
 var _ containerizer.Containerizer = (*TurtleFinder)(nil)
 
-// engineplugin represents the process names of a container engine discovery
+// enginePlugin represents the process names of a container engine discovery
 // plugin, as well as the plugin's Discover function.
-type engineplugin struct {
-	names      []string          // process names of interest
-	detector   detector.Detector // detector plugin interface
-	pluginname string            // for housekeeping and logging
+type enginePlugin struct {
+	names      []string          // process names of interest.
+	detector   detector.Detector // engine process detector plugin interface.
+	pluginname string            // for housekeeping and logging.
 }
 
-// engineprocess represents an individual container engine process and the
+// engineProcess represents an individual container engine process and the
 // container engine discovery plugin responsible for it.
-type engineprocess struct {
-	proc   *model.Process
-	engine *engineplugin
+type engineProcess struct {
+	proc   *model.Process // engine process
+	engine *enginePlugin  // especially detector fn that acts as watcher factory
+}
+
+// activatorPlugin represents the process name of a socket activator as
+// specified by an individual activator.Detector plugin.
+type activatorPlugin struct {
+	name       string // process name of activator.
+	pluginname string // for housekeeping and logging.
 }
 
 // New returns a TurtleFinder object for further use. The supplied contexter is
@@ -83,6 +95,7 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 	f := &TurtleFinder{
 		contexter:       contexter,
 		engines:         map[model.PIDType][]*Engine{},
+		activators:      map[model.PIDType]*socketActivatorProcess{},
 		initialsyncwait: 2 * time.Second,
 	}
 	for _, opt := range opts {
@@ -97,17 +110,29 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 	// working only with a static set of plugins we only need to query the basic
 	// information once.
 	namegivers := plugger.Group[detector.Detector]().PluginsSymbols()
-	engineplugins := make([]engineplugin, 0, len(namegivers))
+	engineplugins := make([]enginePlugin, 0, len(namegivers))
 	for _, namegiver := range namegivers {
-		engineplugins = append(engineplugins, engineplugin{
+		engineplugins = append(engineplugins, enginePlugin{
 			names:      namegiver.S.EngineNames(),
 			detector:   namegiver.S,
 			pluginname: namegiver.Plugin,
 		})
 	}
 	f.engineplugins = engineplugins
-	log.Infof("available engine detector plugins: %s",
+	log.Infof("available engine process detector plugins: %s",
 		strings.Join(plugger.Group[detector.Detector]().Plugins(), ", "))
+	// Query the available activator finder plugins.
+	activators := plugger.Group[activator.Detector]().PluginsSymbols()
+	activatorplugins := make([]activatorPlugin, 0, len(activators))
+	for _, activator := range activators {
+		activatorplugins = append(activatorplugins, activatorPlugin{
+			name:       activator.S.Name(),
+			pluginname: activator.Plugin,
+		})
+	}
+	log.Infof("available socket activator detector plugins: %s",
+		strings.Join(plugger.Group[activator.Detector]().Plugins(), ", "))
+	f.activatorplugins = activatorplugins
 	return f
 }
 
@@ -116,12 +141,11 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 func (f *TurtleFinder) Containers(
 	ctx context.Context, procs model.ProcessTable, pidmap model.PIDMapper,
 ) []*model.Container {
-	// Do some quick housekeeping first: remove engines whose processes have
-	// vanished.
-	if !f.prune(procs) {
-		return nil // sorry, we're closed.
-	}
-	// Then look for new engine processes.
+	// Do some quick housekeeping first: remove engines (watchers) whose
+	// processes have vanished. Also remove vanished socket activators like
+	// "systemd" in containers.
+	f.prune(procs)
+	// Then look for new engine processes and/or socket activators.
 	f.update(ctx, procs)
 	// Now query the available engines for containers that are alive...
 	f.mux.Lock()
@@ -222,78 +246,102 @@ func (f *TurtleFinder) EngineCount() int {
 }
 
 // prune any terminated watchers, either because the watcher terminated itself
-// or we can't find the associated engine process anymore.
-func (f *TurtleFinder) prune(procs model.ProcessTable) bool {
+// or we can't find the associated engine process anymore. This covers both
+// engines once detected by their well-known process names, as well as engines
+// detected to be socket-activated.
+//
+// Also prune any socket activator processes that have gone missing.
+func (f *TurtleFinder) prune(procs model.ProcessTable) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	if f.engines == nil {
-		return false
-	}
+	// Prune engine watchers...
 	for pid, engines := range f.engines {
 		if procs[pid] != nil {
 			continue
 		}
-		engines = deleteFunc(engines, func(engine *Engine) bool {
+		// This particular container engine process has gone, so we need to
+		// remove all individual watchers for for it.
+		engines = deleteAndZeroFunc(engines, func(engine *Engine) bool {
 			if engine.IsAlive() {
 				return false
 			}
 			engine.Close() // ...if not already done so.
 			return true
 		})
+		// Update the engines (watchers) for this (albeit gone) container engine
+		// process, as long as there are still watchers alive. If all watchers
+		// also have gone, then remove this engine process completely from our
+		// inventory.
 		if len(engines) == 0 {
 			delete(f.engines, pid)
 			continue
 		}
 		f.engines[pid] = engines
 	}
-	return true
-}
-
-// deleteFunc is like slices.DeleteFunc, but sets the remaining now unused
-// elements to zero.
-func deleteFunc[S ~[]E, E any](s S, del func(E) bool) S {
-	i := slices.IndexFunc(s, del)
-	if i == -1 {
-		return s
-	}
-	for j := i + 1; j < len(s); j++ {
-		if v := s[j]; !del(v) {
-			s[i] = v
-			i++
+	// Prune socket activators...
+	for pid := range f.activators {
+		if procs[pid] != nil {
+			continue
 		}
+		delete(f.activators, pid)
+		// Note: socket activators do not need explicit cleanup, just don't
+		// reference them anymore.
+		//
+		// Note: we don't forcefully delete any activated watchers, but instead
+		// they should be handled through the above engine watcher pruning.
 	}
-	var zero E
-	for j := i; j < len(s); j++ {
-		s[j] = zero
-	}
-	return s[:i]
 }
 
 // update our knowledge about container engines if necessary, given the current
 // process table and by asking engine discovery plugins for any signs of engine
 // life.
 func (f *TurtleFinder) update(ctx context.Context, procs model.ProcessTable) {
+	var wg sync.WaitGroup
+	f.updateDaemons(ctx, procs, &wg)
+	f.updateActivators(procs, &wg)
+	// Wait for either all engine workload synchronizations to finish within the
+	// time box or the time box to end. In both cases we'll finally proceed with
+	// the discovery.
+	wg.Wait()
+}
+
+// updateDaemons updates our knowledge about running container engines if
+// necessary, given the current process table and by asking engine discovery
+// plugins for any signs of engine life.
+//
+// The referenced wait group count will be increased by the number of container
+// engines detected. updateDaemons will run any workload watcher creation and
+// synchronization in the background on separate go routines. As soon as the
+// watcher creation and synchronization fails or hits the initial
+// synchronization time box, the referenced wait group will be decreased
+// automatically. This ensures that waiting on the wait group will always be
+// time-boxed.
+func (f *TurtleFinder) updateDaemons(ctx context.Context, procs model.ProcessTable, wg *sync.WaitGroup) {
 	// Look for potential signs of engine life, based on process names...
-	engineprocs := []engineprocess{}
+	engineprocs := []engineProcess{}
 NextProcess:
 	for _, proc := range procs {
 		procname := proc.Name
-		for engidx, engine := range f.engineplugins {
+		for engidx := range f.engineplugins {
+			// We need to reference the single authoritative engine item, not a
+			// loop var copy.
+			engine := &f.engineplugins[engidx]
 			for _, enginename := range engine.names {
-				if procname == enginename {
-					engineprocs = append(engineprocs, engineprocess{
-						proc:   proc,
-						engine: &f.engineplugins[engidx], // ...we really don't want to address the loop variable here
-					})
-					continue NextProcess
+				if procname != enginename {
+					continue
 				}
+				engineprocs = append(engineprocs, engineProcess{
+					proc:   proc,
+					engine: engine,
+				})
+				continue NextProcess
 			}
 		}
 	}
 	// Next, throw out all engine processes we already know of and keep only the
 	// new ones to look into them further. This way we keep the lock as short as
 	// possible.
-	newengineprocs := make([]engineprocess, 0, len(engineprocs))
+	newengineprocs := make([]engineProcess, 0, len(engineprocs))
 	f.mux.Lock()
 	for _, engineproc := range engineprocs {
 		// Is this an engine PID we already know and watch?
@@ -312,16 +360,15 @@ NextProcess:
 	// contacting new engines. This also bases on the probably sane assumptions
 	// that a host isn't "infested" with tens or hundreds of container engine
 	// daemons...
-	var wg sync.WaitGroup
 	wg.Add(len(newengineprocs))
 	for _, engineproc := range newengineprocs {
-		go func(engineproc engineprocess) {
+		go func(engineproc engineProcess) {
 			defer wg.Done()
 			log.Debugf("scanning new potential engine process %s (%d) for API endpoints...",
 				engineproc.proc.Name, engineproc.proc.PID)
 			// Does this process have any listening unix sockets that might act as
 			// API endpoints?
-			apisox := discoverAPISockets(engineproc.proc.PID)
+			apisox := discoverAPISocketsOfProcess(engineproc.proc.PID)
 			if apisox == nil {
 				log.Debugf("process %d no API endpoint found", engineproc.proc.PID)
 				return
@@ -330,14 +377,16 @@ NextProcess:
 			// namespace via procfs wormholes; to make this reliably work we need to
 			// evaluate paths for symbolic links...
 			for idx, apipath := range apisox {
-				root := "/proc/" + strconv.FormatUint(uint64(engineproc.proc.PID), 10) +
+				wormhole := "/proc/" + strconv.FormatUint(uint64(engineproc.proc.PID), 10) +
 					"/root"
-				if p, err := procfsroot.EvalSymlinks(apipath, root, procfsroot.EvalFullPath); err == nil {
-					apisox[idx] = root + p
-				} else {
-					log.Warnf("invalid API endpoint at %s", apipath)
+				apipath, err := procfsroot.EvalSymlinks(apipath, wormhole, procfsroot.EvalFullPath)
+				if err != nil {
+					log.Warnf("invalid API endpoint at %s in the context of %s",
+						apipath, wormhole)
 					apisox[idx] = ""
+					continue
 				}
+				apisox[idx] = wormhole + apipath
 			}
 			// Ask the contexter to give us a long-living engine workload
 			// watching context; just using the background context (or even a
@@ -355,49 +404,52 @@ NextProcess:
 			}
 		}(engineproc)
 	}
-	wg.Wait()
 }
 
-// startWatch starts the watch and then shortly waits for a watcher to
-// synchronize and then watches in the background (spinning off a separate go
-// routine) the watcher synchronizing to its engine state, logging begin and end
-// as informational messages.
-func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
-	log.Infof("beginning synchronization to %s engine (PID %d) at API %s",
-		w.Type(), w.PID(), w.API())
-	// Start the watch including the initial synchronization...
-	errch := make(chan error, 1)
-	go func() {
-		errch <- w.Watch(ctx)
-		close(errch)
-	}()
-	// Wait in the background for the synchronization to complete and then
-	// report the engine ID.
-	go func() {
-		<-w.Ready()
-		// Getting the engine ID should be carried out swiftly, so we timebox
-		// it.
-		idctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-		log.Infof("synchronized to %s engine (PID %d) with ID %s",
-			w.Type(), w.PID(), w.ID(idctx))
-		cancel() // ensure to quickly release cancel
-	}()
-	// Give the watcher a (short) chance to get in sync, but do not hang around
-	// for too long...
-	//
-	// Oh, well: time.After is kind of hard to use without small leaks.
-	// Now, a 5s timer will be GC'ed after 5s anyway, but let's do it
-	// properly for once and all, to get the proper habit. For more
-	// background information, please see, for instance:
-	// https://www.arangodb.com/2020/09/a-story-of-a-memory-leak-in-go-how-to-properly-use-time-after/
-	wecker := time.NewTimer(maxwait)
-	select {
-	case <-w.Ready():
-		if !wecker.Stop() { // drain the timer, if necessary.
-			<-wecker.C
+func (f *TurtleFinder) updateActivators(procs model.ProcessTable, wg *sync.WaitGroup) {
+	// Look for potential signs of socket activators, based on their process names...
+	activatorprocs := []*model.Process{}
+NextProcess:
+	for _, proc := range procs {
+		procName := proc.Name
+		for actidx := range f.activatorplugins {
+			if procName != f.activatorplugins[actidx].name {
+				continue
+			}
+			activatorprocs = append(activatorprocs, proc)
+			continue NextProcess
 		}
-	case <-wecker.C:
-		log.Warnf("%s engine (PID %d) not yet synchronized ... continuing in background",
-			w.Type(), w.PID())
+	}
+	// Update our map of socket activators in one go, under lock...
+	f.mux.Lock()
+	for _, activatorproc := range activatorprocs {
+		if _, ok := f.activators[activatorproc.PID]; ok {
+			continue
+		}
+		log.Infof("found new socket activator process '%s' with PID %d",
+			activatorproc.Name, activatorproc.PID)
+		f.activators[activatorproc.PID] = newSocketActivator(activatorproc,
+			f.initialsyncwait,
+			f.contexter,
+			func(w watcher.Watcher, pid model.PIDType) {
+				// As this comes in from a different "background" go routine, we
+				// need to make sure that we're not trashing our engine map.
+				f.mux.Lock()
+				defer f.mux.Unlock()
+				f.engines[pid] = []*Engine{
+					NewEngine(f.contexter(), w),
+				}
+			},
+		)
+	}
+	f.mux.Unlock()
+	// Now iterate over all the socket activators currently known and tell them
+	// to update: the activators are responsible for discovering (new)
+	// activatable API endpoints and creating new watchers as necessary, hiding
+	// the more complex activation and discovery mechanism. New watchers are
+	// then reported via the createdWatcherFn callback function registered above
+	// when we created new socket activator (proxy) objects.
+	for _, activator := range f.activators {
+		activator.update(wg)
 	}
 }

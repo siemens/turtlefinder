@@ -47,13 +47,13 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
 		DeferCleanup(func() {
-			Eventually(Goroutines).WithTimeout(5 * time.Second).WithPolling(250 * time.Millisecond).
+			Eventually(Goroutines).WithTimeout(goroutinesUnwindTimeout).WithPolling(goroutinesUnwindPolling).
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
 
 		By("spinning up a Docker container with stand-alone containerd, courtesy of the KinD k8s sig")
-		pool := Successful(dockertest.NewPool("unix:///var/run/docker.sock"))
+		pool := Successful(dockertest.NewPool("unix:///run/docker.sock"))
 		_ = pool.RemoveContainerByName(kindischName)
 		// The necessary container start arguments come from KinD's Docker node
 		// provisioner, see:
@@ -77,7 +77,7 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 		//   kindisch-...
 		Expect(pool.Client.BuildImage(docker.BuildImageOptions{
 			Name:       img.Name,
-			ContextDir: "./test/_kindisch", // sorry, couldn't resist the pun.
+			ContextDir: "./_test/kindisch", // sorry, couldn't resist the pun.
 			Dockerfile: "Dockerfile",
 			BuildArgs: []docker.BuildArg{
 				{Name: "KINDEST_BASE_TAG", Value: test.KindestBaseImageTag},

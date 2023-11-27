@@ -5,7 +5,8 @@
         }
     ],
     "settings": {
-        "go.buildTags": "",
-        "go.testTags": "matchers"
+        "go.buildTags": "matchers",
+        "go.testTags": "matchers",
+        "go.lintTool": "golangci-lint"
     }
 }

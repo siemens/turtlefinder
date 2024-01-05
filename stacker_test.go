@@ -21,6 +21,8 @@ import (
 	"github.com/thediveo/whalewatcher/watcher/containerd"
 	"github.com/thediveo/whalewatcher/watcher/moby"
 
+	testlog "github.com/siemens/turtlefinder/internal/test"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
@@ -37,13 +39,15 @@ const (
 	testImageRef      = "docker.io/library/busybox:latest"
 )
 
-var _ = Describe("turtles and elephants", func() {
+var _ = Describe("turtles and elephants", Serial, Ordered, func() {
+
+	BeforeEach(testlog.LogToGinkgo)
 
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
 		DeferCleanup(func() {
-			Eventually(Goroutines).WithTimeout(2 * time.Second).WithPolling(250 * time.Millisecond).
+			Eventually(Goroutines).WithTimeout(goroutinesUnwindTimeout).WithPolling(goroutinesUnwindPolling).
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
@@ -89,7 +93,7 @@ var _ = Describe("turtles and elephants", func() {
 
 		By("starting an additional container engine in a container")
 		By("spinning up a Docker container with stand-alone containerd, courtesy of the KinD k8s sig")
-		pool := Successful(dockertest.NewPool("unix:///var/run/docker.sock"))
+		pool := Successful(dockertest.NewPool("unix:///run/docker.sock"))
 		_ = pool.RemoveContainerByName(kindischName)
 		// The necessary container start arguments come from KinD's Docker node
 		// provisioner, see:
@@ -113,7 +117,7 @@ var _ = Describe("turtles and elephants", func() {
 		//   kindisch-...
 		Expect(pool.Client.BuildImage(docker.BuildImageOptions{
 			Name:       img.Name,
-			ContextDir: "./detector/containerd/test/_kindisch", // sorry, couldn't resist the pun.
+			ContextDir: "./detector/containerd/_test/kindisch", // sorry, couldn't resist the pun.
 			Dockerfile: "Dockerfile",
 			BuildArgs: []docker.BuildArg{
 				{Name: "KINDEST_BASE_TAG", Value: test.KindestBaseImageTag},

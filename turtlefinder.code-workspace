@@ -3,5 +3,10 @@
         {
             "path": "."
         }
-    ]
+    ],
+    "settings": {
+        "go.buildTags": "matchers",
+        "go.testTags": "matchers",
+        "go.lintTool": "golangci-lint"
+    }
 }

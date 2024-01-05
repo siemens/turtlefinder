@@ -7,8 +7,6 @@ package turtlefinder
 import (
 	"net"
 	"os"
-	"syscall"
-	"time"
 
 	"github.com/thediveo/lxkns/model"
 
@@ -16,9 +14,8 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
 	. "github.com/thediveo/fdooze"
+	. "github.com/thediveo/success"
 )
-
-const testListeningUnixSocketPath = "/tmp/gw-turtlefinder-test.sock"
 
 var _ = Describe("socket finder", func() {
 
@@ -26,38 +23,65 @@ var _ = Describe("socket finder", func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
 		DeferCleanup(func() {
-			Eventually(Goroutines).WithTimeout(2 * time.Second).WithPolling(250 * time.Millisecond).
+			Eventually(Goroutines).WithTimeout(goroutinesUnwindTimeout).WithPolling(goroutinesUnwindPolling).
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
 	})
 
+	When("reading socket file descriptors of a process", func() {
+
+		It("reports a non-existing PID", func() {
+			Expect(rawSocketFdsOfProcess("", 0)).Error().To(MatchError(ContainSubstring(
+				"cannot determine fds for process with PID 0, reason")))
+		})
+
+		It("reports when access is denied", func() {
+			if os.Getegid() == 0 {
+				Skip("must be run as non-root")
+			}
+			Expect(rawSocketFdsOfProcess("", 1)).Error().To(MatchError(ContainSubstring(
+				"permission denied")))
+		})
+
+		It("only returns sockets, nothing else", func() {
+			fakeproc := Successful(os.MkdirTemp("", "fakeproc-*"))
+			defer os.RemoveAll(fakeproc)
+			fakefds := fakeproc + "/proc/123456/fd"
+			Expect(os.MkdirAll(fakefds, 0770)).To(Succeed())
+			Expect(os.Symlink("/foobar", fakefds+"/1")).To(Succeed())
+			Expect(os.Symlink("socket:[2345678]", fakefds+"/2")).To(Succeed())
+			Expect(os.WriteFile(fakefds+"/3", []byte("foobar"), 0644)).To(Succeed())
+			Expect(os.Symlink("socket:[", fakefds+"/666")).To(Succeed())
+
+			Expect(rawSocketFdsOfProcess(fakeproc, 123456)).To(ConsistOf(
+				rawSocketFd{fd: "2", socketino: "2345678"},
+			))
+		})
+
+	})
+
 	It("finds Docker API unix socket", func() {
-		sox := discoverListeningSox(model.PIDType(os.Getpid()))
+		sox := listeningUDSVisibleToProcess(model.PIDType(os.Getpid()))
 		Expect(sox).To(ContainElement("/run/docker.sock"))
 	})
 
-	It("doesn't find non-existing canary listening unix socket", func() {
-		soxpaths := matchProcSox(
-			model.PIDType(os.Getpid()),
-			discoverListeningSox(model.PIDType(os.Getpid())))
-		Expect(soxpaths).NotTo(ContainElement(testListeningUnixSocketPath))
-	})
-
 	It("finds listening canary unix socket", func() {
-		_ = syscall.Unlink(testListeningUnixSocketPath)
+		fakesockdir := Successful(os.MkdirTemp("", "fakesock-*"))
+		defer os.RemoveAll(fakesockdir)
 
-		lsock, err := net.Listen("unix", testListeningUnixSocketPath)
-		Expect(err).NotTo(HaveOccurred())
-		defer func() {
-			_ = lsock.Close()
-			_ = syscall.Unlink(testListeningUnixSocketPath)
-		}()
+		canarysockpath := fakesockdir + "/canary.sock"
+		lsock := Successful(net.Listen("unix", canarysockpath))
+		defer lsock.Close()
 
-		soxpaths := matchProcSox(
+		soxpaths := listeningUDSPathsOfProcess(
 			model.PIDType(os.Getpid()),
-			discoverListeningSox(model.PIDType(os.Getpid())))
-		Expect(soxpaths).To(ContainElement(testListeningUnixSocketPath))
+			listeningUDSVisibleToProcess(model.PIDType(os.Getpid())))
+		Expect(soxpaths).To(ContainElement(canarysockpath))
+
+		rawfds := Successful(rawSocketFdsOfProcess("", model.PIDType(os.Getpid())))
+		lsox := listeningUDSPaths(rawfds, listeningUDSVisibleToProcess(model.PIDType(os.Getpid())))
+		Expect(lsox).To(ContainElement(canarysockpath))
 	})
 
 })

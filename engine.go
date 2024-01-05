@@ -13,33 +13,40 @@ import (
 	"github.com/thediveo/whalewatcher/watcher"
 )
 
-// Engine watches a container engine for signs of container life, using a
-// supplied "whale watcher". Engine objects then can be queried for a list of
+// Engine watches a single container engine process for signs of container
+// workload life, using the supplied "whale watcher".
+//
+// Engine objects then can be queried for their workload, that is, the list of
 // currently alive (running/paused) containers they manage.
+//
+// An Engine can be “done” at any time when the container engine process
+// terminates or otherwise disconnects the watcher. In this case, the Done
+// channel will be closed.
 type Engine struct {
 	watcher.Watcher               // engine watcher (doubles as engine adapter).
 	ID              string        // engine ID.
 	Version         string        // engine version.
 	Done            chan struct{} // closed when watch is done/has terminated.
+	Cleanerfn       func(*Engine) // if non-nil, called when the Engine is getting removed.
 }
 
 // NewEngine returns a new Engine given the specified watcher. The Engine is
 // already "warming up" and has started watching (using the given context).
-func NewEngine(ctx context.Context, watch watcher.Watcher) *Engine {
+func NewEngine(ctx context.Context, w watcher.Watcher) *Engine {
 	idctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	e := &Engine{
-		Watcher: watch,
-		ID:      watch.ID(idctx),
-		Version: watch.Version(idctx),
+		Watcher: w,
+		ID:      w.ID(idctx),
+		Version: w.Version(idctx),
 		Done:    make(chan struct{}, 1), // might never be picked up in some situations
 	}
 	cancel() // ensure to quickly release cancel, silence linter
 	log.Infof("watching %s container engine (PID %d) with ID '%s', version '%s'",
-		watch.Type(), watch.PID(), e.ID, e.Version)
+		w.Type(), w.PID(), e.ID, e.Version)
 	go func() {
 		err := e.Watcher.Watch(ctx)
 		log.Infof("stopped watching container engine (PID %d), reason: %s",
-			watch.PID(), err.Error())
+			w.PID(), err.Error())
 		close(e.Done)
 		e.Close()
 	}()

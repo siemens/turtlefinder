@@ -10,8 +10,9 @@ import (
 
 	"github.com/onsi/gomega/types"
 	"github.com/ory/dockertest/v3"
-	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/whalewatcher/watcher/moby"
+
+	"github.com/siemens/turtlefinder/internal/test"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,13 +31,15 @@ func HaveEngine(typ string, apiregex string) types.GomegaMatcher {
 		HaveField("API", MatchRegexp(apiregex)))
 }
 
-var _ = Describe("container engine", func() {
+var _ = Describe("container engine", Serial, Ordered, func() {
+
+	BeforeEach(test.LogToGinkgo)
 
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
 		DeferCleanup(func() {
-			Eventually(Goroutines).WithTimeout(2 * time.Second).WithPolling(250 * time.Millisecond).
+			Eventually(Goroutines).WithTimeout(goroutinesUnwindTimeout).WithPolling(goroutinesUnwindPolling).
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
@@ -66,10 +69,9 @@ var _ = Describe("container engine", func() {
 
 		// Give leeway for the container workload discovery to reflect the
 		// correct situation even under heavy system load. And remember to pass
-		// a function to Eventually, not a result ;)
-		Eventually(func() []*model.Container {
-			return engine.Containers(ctx)
-		}).Within(10*time.Second).ProbeEvery(500*time.Millisecond).
+		// a *function* to Eventually, not the result of a function *call* ;)
+		Eventually(engine.Containers).WithContext(ctx).
+			Within(10*time.Second).ProbeEvery(500*time.Millisecond).
 			Should(ContainElement(HaveContainerNameID(testEngineWorkloadName)),
 				"missing container %s", testEngineWorkloadName)
 

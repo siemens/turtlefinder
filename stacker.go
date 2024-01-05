@@ -6,6 +6,7 @@ package turtlefinder
 
 import (
 	"github.com/thediveo/lxkns/model"
+	"golang.org/x/exp/maps"
 )
 
 // TurtlefinderContainerPrefixLabelName defines the label name for attaching
@@ -53,6 +54,32 @@ func stackEngines(containers []*model.Container, engines []*Engine, proctable mo
 	// We also use this chance to see if an engine is inside a container and in
 	// which one in particular.
 	stackedEngines := map[model.PIDType]*stackedEngine{}
+	// The hierarchy is formed by engines inside containers, and these
+	// containers then again belonging to engines, and so on. Now in case of
+	// engines that have been socket-activated in this run, we lack the
+	// process details of the newly activated engine process. So we just
+	// fetch those pieces of engine process information we next need for
+	// climbing the hierarchy.
+	clonedProctable := false
+	for _, engine := range engines {
+		proc := proctable[model.PIDType(engine.PID())]
+		if proc != nil {
+			continue
+		}
+		proc = model.NewProcess(model.PIDType(engine.PID()), false)
+		if proc == nil {
+			continue // we've lost this engine already, anyway.
+		}
+		if !clonedProctable {
+			clonedProctable = true
+			proctable = maps.Clone(proctable) // a shallow clone is enough.
+		}
+		// Below, we'll only need the child->parent relationship, but not
+		// parent->children: we thus only need to modify the newly created
+		// process object and the shallow clone of the map, but we neither touch
+		// the original process map nor the original process objects.
+		proc.Parent = proctable[proc.PPID]
+	}
 	for _, engine := range engines {
 		// Climb up the process tree until we either hit a container PID or we
 		// fall off the ... root? Okay, another +1 on the eternal counter of
@@ -112,7 +139,7 @@ func stackEngines(containers []*model.Container, engines []*Engine, proctable mo
 		engine.Prefix = prefix
 	}
 	// Finally distribute the per-engine prefixes to the individual containers;
-	// the prefixes are attached as Gostwire-specific container labels.
+	// the prefixes are attached as turtlefinder-specific container labels.
 	var engine *model.ContainerEngine
 	var cachedEnginePrefix string
 	for _, container := range containers {

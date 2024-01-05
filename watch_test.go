@@ -54,7 +54,9 @@ var _ = Describe("watch", Serial, func() {
 			// nota bene: the "synchronized" log comes from another go routine, so
 			// we need to wait for it.
 			Eventually(GinkgoWriter.(fmt.Stringer).String).Should(MatchRegexp(
-				`beginning synchronization to 'docker.com' engine .*\n.*synchronized to 'docker.com' container engine .* with ID '[A-Z0-9]{4}(?::[A-Z0-9]{4}){11}'`))
+				`beginning synchronization to 'docker.com' engine .*\n` +
+					`.*synchronized to 'docker.com' container engine .* with ID ` +
+					`'(?:[A-Z0-9]{4}(?:[A-Z0-9]{4}){11})|(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'`))
 			cancel()
 			Eventually(GinkgoWriter.(fmt.Stringer).String).Should(ContainSubstring("terminated watch"))
 		})

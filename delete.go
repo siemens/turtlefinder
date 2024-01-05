@@ -4,7 +4,7 @@
 
 package turtlefinder
 
-import "slices"
+import "golang.org/x/exp/slices"
 
 // deleteAndZeroFunc is like slices.DeleteFunc, but sets the remaining now
 // unused elements to zero. This serves as a stop-gap measure until implemented

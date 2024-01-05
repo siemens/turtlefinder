@@ -207,7 +207,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(exitcode).To(BeZero())
 
-		By("discovering podman workload")
+		By("discovering podman workload and its managing podman engine hierarchy")
 		Eventually(func() []*model.Container {
 			lxdisco := discover.Namespaces(discover.WithFullDiscovery())
 			return tf.Containers(ctx, lxdisco.Processes, lxdisco.PIDMap)
@@ -215,6 +215,8 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 			Should(ContainElement(And(
 				matcher.HaveContainerNameID(canaryContainerName),
 				HaveField("Type", podman.Type),
+				HaveField("Labels", HaveKeyWithValue(
+					TurtlefinderContainerPrefixLabelName, pindName)),
 			)))
 	})
 

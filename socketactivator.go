@@ -52,8 +52,8 @@ type demonFinderPlugin struct {
 	pluginname string // for housekeeping and logging
 }
 
-var muDaemonDetectorPlugins sync.Mutex
-var demonDetectorPlugins []*demonFinderPlugin
+var muDaemonDetectorPlugins sync.Mutex        // protects the next variable
+var demonDetectorPlugins []*demonFinderPlugin // cached list of plugins
 
 // newSocketActivator returns a new socketActivator and runs an initial
 // discovery on it at the same time.
@@ -133,6 +133,10 @@ func (s *socketActivatorProcess) update(wg *sync.WaitGroup) {
 	)
 }
 
+// rawSocketFdsWithHash returns a list of sockets this socket activator process
+// currently has open, together with a hash value calculated from the socket fd
+// and socket inode numbers. The hash can be used to detect changes in the
+// fd-socket configuration.
 func (s *socketActivatorProcess) rawSocketFdsWithHash() (rawsocketfds []rawSocketFd, hash uint64, err error) {
 	rawsocketfds, err = rawSocketFdsOfProcess("", s.proc.PID)
 	if err != nil {

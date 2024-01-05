@@ -29,7 +29,18 @@ import (
 	"github.com/thediveo/whalewatcher/watcher"
 )
 
-// Overseer gives access to information about container engines currently monitored.
+// Overseer gives access to information about container engines currently
+// monitored.
+//
+// [turtlefinder.Turtlefinder] objects implement the Overseer interface to allow
+// code given only a [containerizer.Containerizer] to query the currently
+// monitored container engine instances.
+//
+//		var c containerizer.Containerizer
+//		o, ok := c.(turtlefinder.Overseer)
+//	 	if ok {
+//		    engines := o.Engines()
+//	 	}
 type Overseer interface {
 	Engines() []*model.ContainerEngine
 }
@@ -58,8 +69,10 @@ type TurtleFinder struct {
 	activators map[model.PIDType]*socketActivatorProcess // socket activators we've found.
 }
 
-// TurtleFinder implements the lxkns Containerizer interface.
+// TurtleFinder implements the lxkns Containerizer interface. And it's also an
+// Overseer.
 var _ containerizer.Containerizer = (*TurtleFinder)(nil)
+var _ Overseer = (*TurtleFinder)(nil)
 
 // enginePlugin represents the process names of a container engine discovery
 // plugin, as well as the plugin's Discover function.

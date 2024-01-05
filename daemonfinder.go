@@ -80,7 +80,7 @@ func findDaemon(ppid model.PIDType, name string, udsino uint64) model.PIDType {
 				continue
 			}
 			// It's a match, but now we need to return the PID...
-			pid, err := strconv.Atoi(pid.Name())
+			pid, err := strconv.ParseInt(pid.Name(), 10, 32)
 			if err != nil {
 				return 0
 			}

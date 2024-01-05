@@ -1,0 +1,4 @@
+run:
+  build-tags:
+    - matchers # albeit needed only in tests
+  

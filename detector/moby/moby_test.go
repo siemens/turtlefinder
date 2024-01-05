@@ -27,6 +27,9 @@ const testWorkloadName = "turtles-docker-watch-workload"
 
 const timeout = NodeTimeout(30 * time.Second)
 
+const goroutinesUnwindTimeout = 2 * time.Second
+const goroutinesUnwindPolling = 250 * time.Millisecond
+
 var _ = Describe("Docker detector", Ordered, func() {
 
 	var pool *dockertest.Pool
@@ -57,7 +60,7 @@ var _ = Describe("Docker detector", Ordered, func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
 		DeferCleanup(NodeTimeout(30*time.Second), func(_ context.Context) {
-			Eventually(Goroutines).WithTimeout(5 * time.Second).WithPolling(250 * time.Millisecond).
+			Eventually(Goroutines).WithTimeout(goroutinesUnwindTimeout).WithPolling(goroutinesUnwindPolling).
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})

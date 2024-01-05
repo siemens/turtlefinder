@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestUtil(t *testing.T) {
+func TestMatcher(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "turtlefinder/util")
+	RunSpecs(t, "turtlefinder/matcher")
 }

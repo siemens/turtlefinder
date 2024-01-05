@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package moby
+package unsorted
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestDetectorMoby(t *testing.T) {
+func TestUnsorted(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "turtlefinder/detector/moby")
+	RunSpecs(t, "turtlefinder/unsorted")
 }

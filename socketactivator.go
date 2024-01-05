@@ -5,11 +5,12 @@
 package turtlefinder
 
 import (
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/siemens/turtlefinder/activator"

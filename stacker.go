@@ -78,6 +78,7 @@ func stackEngines(containers []*model.Container, engines []*Engine, proctable mo
 		// parent->children: we thus only need to modify the newly created
 		// process object and the shallow clone of the map, but we neither touch
 		// the original process map nor the original process objects.
+		proctable[proc.PID] = proc
 		proc.Parent = proctable[proc.PPID]
 	}
 	for _, engine := range engines {

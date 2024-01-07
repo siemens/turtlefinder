@@ -27,7 +27,6 @@ type Engine struct {
 	ID              string        // engine ID.
 	Version         string        // engine version.
 	Done            chan struct{} // closed when watch is done/has terminated.
-	Cleanerfn       func(*Engine) // if non-nil, called when the Engine is getting removed.
 }
 
 // NewEngine returns a new Engine given the specified watcher. The Engine is

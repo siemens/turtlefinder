@@ -50,7 +50,7 @@ var _ = Describe("container engine", Serial, Ordered, func() {
 		Expect(err).NotTo(HaveOccurred())
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		engine := NewEngine(ctx, w)
+		engine := NewEngine(ctx, w, 0)
 		Expect(engine.ID).NotTo(BeZero())
 
 		Consistently(engine.IsAlive).Should(BeTrue())

@@ -170,6 +170,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 				HaveField("Type", containerd.Type),
 				HaveField("Type", containerd.Type),
 				HaveField("Type", moby.Type),
+				HaveField("Type", cri.Type),
 			))
 
 		By("pulling a busybox image (if necessary)")
@@ -210,7 +211,6 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			Should(HaveExactElements(
 				HaveField("Type", containerd.Type), // ...only one left
 				HaveField("Type", moby.Type),
-				HaveField("Type", cri.Type),
 			))
 	})
 

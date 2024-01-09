@@ -160,14 +160,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		By("waiting for turtle finder to catch up")
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			engines := slices.DeleteFunc(finder.Engines(), func(e *model.ContainerEngine) bool {
-				switch e.Type {
-				case containerd.Type, moby.Type, cri.Type:
-					return false
-				default:
-					return true
-				}
-			})
+			engines := slices.DeleteFunc(finder.Engines(), isStackerTestEngineTyp)
 			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
 				return strings.Compare(a.Type, b.Type)
 			})
@@ -209,9 +202,30 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		By("waiting for the containerized containerd engine to vanish")
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			return finder.Engines()
+			engines := slices.DeleteFunc(finder.Engines(), isStackerTestEngineTyp)
+			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
+				return strings.Compare(a.Type, b.Type)
+			})
+			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
-			Should(HaveLen(len(engines)))
+			Should(HaveExactElements(
+				HaveField("Type", containerd.Type), // ...only one left
+				HaveField("Type", moby.Type),
+				HaveField("Type", cri.Type),
+			))
 	})
 
 })
+
+// filter for the engine types guaranteed to be present; please note that we
+// filter out podman here, in order to be independent of host podman
+// installations. We cover podman explicitly in the overall turtlefinder
+// test(s).
+func isStackerTestEngineTyp(e *model.ContainerEngine) bool {
+	switch e.Type {
+	case containerd.Type, moby.Type, cri.Type:
+		return false
+	default:
+		return true
+	}
+}

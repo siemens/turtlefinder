@@ -23,7 +23,7 @@ import (
 
 const sockactivatorSyncWait = 5 * time.Second
 
-func resetActivatorPlugins() {
+func clearCachedDetectorPlugins() {
 	muDaemonDetectorPlugins.Lock()
 	defer muDaemonDetectorPlugins.Unlock()
 	demonDetectorPlugins = nil
@@ -35,7 +35,7 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 
 	BeforeEach(test.LogToGinkgo)
 
-	BeforeEach(resetActivatorPlugins)
+	BeforeEach(clearCachedDetectorPlugins)
 
 	BeforeEach(func() {
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over

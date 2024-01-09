@@ -84,10 +84,10 @@ require (
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/thediveo/fdooze v0.3.1
 	github.com/thediveo/go-plugger/v3 v3.1.0
-	github.com/thediveo/lxkns v0.30.0
+	github.com/thediveo/lxkns v0.31.0
 	github.com/thediveo/success v1.0.2
 	github.com/thediveo/whalewatcher v0.11.0
 	golang.org/x/net v0.19.0 // indirect
-	golang.org/x/sys v0.16.0
+	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/tools v0.16.0 // indirect
 )

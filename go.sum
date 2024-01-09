@@ -152,7 +152,7 @@ github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/procfs v0.9.0 h1:wzCHvIvM5SxWqYvwgVL7yJY8Lz3PKn49KQtpgMYJfhI=
 github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=
-github.com/samber/lo v1.38.1 h1:j2XEAqXKb09Am4ebOg31SpvzUTTs6EN3VfgeLUhPdXM=
+github.com/samber/lo v1.39.0 h1:4gTz1wUhNYLhFSKl6O+8peW0v2F4BCY034GRpU9WnuA=
 github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMBDgk/93Q=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
@@ -174,14 +174,12 @@ github.com/thediveo/fdooze v0.3.1 h1:T5lARTBZXdDIwdsMNgiwpEY3NT40k1WTRlkoKgk8K+0
 github.com/thediveo/fdooze v0.3.1/go.mod h1:wf5DDE9ch9MqqoS5ofU5+tOOsZyvp5qrJzQjVIGXUTk=
 github.com/thediveo/go-mntinfo v1.0.2 h1:PVzVhve7Hhi9cEnW7tLv+6V1K0L14LyrFkoRNIhL7e0=
 github.com/thediveo/go-mntinfo v1.0.2/go.mod h1:R0OctrQ+AVz+aEbofJah3/8Hrpn9N22mc0Dym8Mv2qM=
-github.com/thediveo/go-plugger/v3 v3.0.1 h1:GIlzqJa1stXgF2ouey69hyWaS+iaxLWJT37N8DMtQP8=
-github.com/thediveo/go-plugger/v3 v3.0.1/go.mod h1:UYHIk8tys2lerZjpMhbWjrORb6/mXlb2bGZxCPTuR8k=
 github.com/thediveo/go-plugger/v3 v3.1.0 h1:aqtzFkP7gBU/MlL/TyMOTY0MUYixebZn8JVhX/13yLo=
 github.com/thediveo/go-plugger/v3 v3.1.0/go.mod h1:bED6ehF6GQUW9NDDgJG6QS/GL1J8L8hT3RUI7GTtAWo=
 github.com/thediveo/ioctl v0.9.3 h1:DCxyUUY15z/Zezz+wf2nlbVf3yFh0nvfM7i7KnfgG8s=
 github.com/thediveo/ioctl v0.9.3/go.mod h1:Ro3WW0UuPDh1QByEwNb/alva3ODM+GbRlb80u/LZU9o=
-github.com/thediveo/lxkns v0.30.0 h1:shbrIHMX7kEgCIR1VgJO7OB6eVtJMDppaC9PM2hvXsU=
-github.com/thediveo/lxkns v0.30.0/go.mod h1:36NPgrJPxQrlAQLy2GS0dO+EHQB1Gu2ijlPy5KRgWic=
+github.com/thediveo/lxkns v0.31.0 h1:vjUaMfYG+Xafep6L/QUDfU+xK+jpzrZQyG0OKQAnfhg=
+github.com/thediveo/lxkns v0.31.0/go.mod h1:agBgLaQTIIRC0+GzEzqdRxK4sihsZkvpp4Nsp10+Rl4=
 github.com/thediveo/namspill v0.1.6 h1:eD8puqhwIkBS78vrzJtY46eurHX0o6JIAqzgkRmMLl0=
 github.com/thediveo/notwork v1.3.1 h1:KG1Jh7pWU+QTl+7yMzs2Zugl8JZsP0x4OwNFt0rItL0=
 github.com/thediveo/once v0.9.1 h1:gk/8dYOto5cVEBH0LK1vYyOFH9OvugcZ12e+UnJpmTo=
@@ -244,8 +242,6 @@ golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201207232520-09787c993a3a/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
-golang.org/x/sync v0.5.0 h1:60k92dhOjHxJkrqnwsfl8KuaHbn/5dl0lUPUklKo3qE=
-golang.org/x/sync v0.5.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sync v0.6.0 h1:5BMeUDZ7vkXGfEr1x9B4bRcTH4lpkTkpdh0T/J+qjbQ=
 golang.org/x/sync v0.6.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sys v0.0.0-20180830151530-49385e6e1522/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
@@ -261,8 +257,6 @@ golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.1.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.15.0 h1:h48lPFYpsTvQJZF4EKyI4aLHaev3CxivZmv7yZig9pc=
-golang.org/x/sys v0.15.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/sys v0.16.0 h1:xWw16ngr6ZMtmxDyKyIgsE93KNKz5HKmMa3b8ALHidU=
 golang.org/x/sys v0.16.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

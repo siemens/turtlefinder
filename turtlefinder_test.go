@@ -119,7 +119,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 
 	})
 
-	BeforeEach(resetActivatorPlugins)
+	BeforeEach(clearCachedDetectorPlugins)
 
 	BeforeEach(test.LogToGinkgo)
 

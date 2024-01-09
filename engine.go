@@ -27,18 +27,29 @@ type Engine struct {
 	ID              string        // engine ID.
 	Version         string        // engine version.
 	Done            chan struct{} // closed when watch is done/has terminated.
-	Cleanerfn       func(*Engine) // if non-nil, called when the Engine is getting removed.
+	PPIDHint        model.PIDType // PID of engine's process; for container PID translation.
 }
 
-// NewEngine returns a new Engine given the specified watcher. The Engine is
-// already "warming up" and has started watching (using the given context).
-func NewEngine(ctx context.Context, w watcher.Watcher) *Engine {
+// NewEngine returns a new Engine given the specified watcher. As NewEngine
+// returns, the Engine is already "warming up" and has started watching (using
+// the given context).
+//
+// ppidhint optionally specifies a container engine's immediate parent process.
+// This information is later necessary for lxkns to correctly translate
+// container PIDs. When activating a socket-activated engine, the process tree
+// scan does never include the engine, as this is only activated after the scan.
+// In order to still allow lxkns to translate container PIDs related to newly
+// socket-activated engines, we assume that the engine's parent process PID is
+// in the same PID namespace, so we can also use that for correct PID
+// translation.
+func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *Engine {
 	idctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	e := &Engine{
-		Watcher: w,
-		ID:      w.ID(idctx),
-		Version: w.Version(idctx),
-		Done:    make(chan struct{}, 1), // might never be picked up in some situations
+		Watcher:  w,
+		ID:       w.ID(idctx),
+		Version:  w.Version(idctx),
+		Done:     make(chan struct{}, 1), // might never be picked up in some situations
+		PPIDHint: ppidhint,
 	}
 	cancel() // ensure to quickly release cancel, silence linter
 	log.Infof("watching %s container engine (PID %d) with ID '%s', version '%s'",
@@ -55,13 +66,17 @@ func NewEngine(ctx context.Context, w watcher.Watcher) *Engine {
 
 // Containers returns the alive containers managed by this engine, using the
 // associated watcher.
+//
+// The containers returned will reference a model.ContainerEngine and thus are
+// decoupled from a turtlefinder's (container) Engine object.
 func (e *Engine) Containers(ctx context.Context) []*model.Container {
 	eng := &model.ContainerEngine{
-		ID:      e.ID,
-		Type:    e.Watcher.Type(),
-		Version: e.Version,
-		API:     e.Watcher.API(),
-		PID:     model.PIDType(e.Watcher.PID()),
+		ID:       e.ID,
+		Type:     e.Watcher.Type(),
+		Version:  e.Version,
+		API:      e.Watcher.API(),
+		PID:      model.PIDType(e.Watcher.PID()),
+		PPIDHint: e.PPIDHint,
 	}
 	// Adapt the whalewatcher container model to the lxkns container model,
 	// where the latter takes container engines and groups into account of its

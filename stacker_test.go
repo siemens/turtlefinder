@@ -8,6 +8,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ory/dockertest/v3"
@@ -16,10 +17,12 @@ import (
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/lxkns/species"
 	"github.com/thediveo/whalewatcher/engineclient/containerd/test/ctr"
+	"github.com/thediveo/whalewatcher/engineclient/cri"
 	"github.com/thediveo/whalewatcher/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/test"
 	"github.com/thediveo/whalewatcher/watcher/containerd"
 	"github.com/thediveo/whalewatcher/watcher/moby"
+	"golang.org/x/exp/slices"
 
 	testlog "github.com/siemens/turtlefinder/internal/test"
 
@@ -157,9 +160,18 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		By("waiting for turtle finder to catch up")
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			return finder.Engines()
+			engines := slices.DeleteFunc(finder.Engines(), isStackerTestEngineTyp)
+			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
+				return strings.Compare(a.Type, b.Type)
+			})
+			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
-			Should(HaveLen(len(engines) + 2 /* containerd native and CRI "twins"*/))
+			Should(HaveExactElements(
+				HaveField("Type", containerd.Type),
+				HaveField("Type", containerd.Type),
+				HaveField("Type", moby.Type),
+				HaveField("Type", cri.Type),
+			))
 
 		By("pulling a busybox image (if necessary)")
 		ctr.Successfully(providerCntr,
@@ -190,9 +202,29 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		By("waiting for the containerized containerd engine to vanish")
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			return finder.Engines()
+			engines := slices.DeleteFunc(finder.Engines(), isStackerTestEngineTyp)
+			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
+				return strings.Compare(a.Type, b.Type)
+			})
+			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
-			Should(HaveLen(len(engines)))
+			Should(HaveExactElements(
+				HaveField("Type", containerd.Type), // ...only one left
+				HaveField("Type", moby.Type),
+			))
 	})
 
 })
+
+// filter for the engine types guaranteed to be present; please note that we
+// filter out podman here, in order to be independent of host podman
+// installations. We cover podman explicitly in the overall turtlefinder
+// test(s).
+func isStackerTestEngineTyp(e *model.ContainerEngine) bool {
+	switch e.Type {
+	case containerd.Type, moby.Type, cri.Type:
+		return false
+	default:
+		return true
+	}
+}

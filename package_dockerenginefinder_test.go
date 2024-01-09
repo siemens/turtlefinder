@@ -29,6 +29,7 @@ func dockerEngineFinderOnly() {
 	backup := g.Backup()
 	DeferCleanup(func() {
 		g.Restore(backup)
+		clearCachedDetectorPlugins() // ...and don't forget to clean up after all
 	})
 	g.Clear()
 	g.Register(&dockerdEngineFinder{}, plugger.WithPlugin("test-dockerd"))

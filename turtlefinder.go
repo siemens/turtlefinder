@@ -15,7 +15,6 @@ import (
 
 	"github.com/siemens/turtlefinder/activator"
 	"github.com/siemens/turtlefinder/detector"
-	"golang.org/x/exp/slices"
 	"golang.org/x/sync/semaphore"
 
 	_ "github.com/siemens/turtlefinder/activator/all" // pull in activator and socket-activated engine detector plugins
@@ -162,11 +161,9 @@ func (f *TurtleFinder) Containers(
 	f.update(ctx, procs)
 	// Now query the available engines for containers that are alive...
 	f.mux.Lock()
-	allEngines := make([]*Engine, 0, len(f.engines))
+	allEngines := make([]*Engine, 0, len(f.engines) /* lucky guess */)
 	for _, engines := range f.engines {
-		// create copies of the engine objects in order to not trash the
-		// original engine objects.
-		allEngines = append(allEngines, slices.Clone(engines)...)
+		allEngines = append(allEngines, engines...)
 	}
 	f.mux.Unlock()
 	allcontainers := []*model.Container{}
@@ -408,9 +405,9 @@ NextProcess:
 			// watchers when retiring a Turtlefinder.
 			enginectx := f.contexter()
 			for _, w := range engineproc.engine.detector.NewWatchers(enginectx, engineproc.proc.PID, apisox) {
-				// We've got a new watcher! Or two *snicker*
+				// We've got a new watcher! Or two... *snicker* ...so many demons!
 				startWatch(enginectx, w, f.initialsyncwait)
-				eng := NewEngine(enginectx, w)
+				eng := NewEngine(enginectx, w, engineproc.proc.PPID)
 				f.mux.Lock()
 				f.engines[engineproc.proc.PID] = append(f.engines[engineproc.proc.PID], eng)
 				f.mux.Unlock()
@@ -449,8 +446,19 @@ NextProcess:
 				// need to make sure that we're not trashing our engine map.
 				f.mux.Lock()
 				defer f.mux.Unlock()
+				// Freshly socket-activated engines won't yet be in the process
+				// tree we're working on. In order to allow downstream users of
+				// turtlefinders – lxkns in particular – to still do correct
+				// container PID translation, we get an engine's parent PID that
+				// we assume serves as well for PID translation between PID
+				// namespaces. So pay a quick visit to the proc filesystem and
+				// pick up this engine's PPID.
+				var ppidhint model.PIDType
+				if engproc := model.NewProcess(pid, false); engproc != nil {
+					ppidhint = engproc.PPID
+				}
 				f.engines[pid] = []*Engine{
-					NewEngine(f.contexter(), w),
+					NewEngine(f.contexter(), w, ppidhint),
 				}
 			},
 		)

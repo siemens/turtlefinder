@@ -175,6 +175,10 @@ func activateAndStartWatch(
 		if err != nil {
 			return
 		}
+		if w == nil {
+			err = fmt.Errorf("no '%s' watcher for API endpoint %s", enginename, apipath)
+			return
+		}
 		remmaxwait := maxwait - time.Since(started)
 		if remmaxwait < 0 {
 			remmaxwait = 0

@@ -213,19 +213,22 @@ func (s *socketActivatorProcess) activateAndWatch(
 	// through the proc filesystem "root" element "wormholes".
 	wormhole := "/proc/" + strconv.FormatUint(uint64(s.proc.PID), 10) + "/root"
 	for ino, api := range apis {
+		if api == "" {
+			continue
+		}
 		idx := slices.IndexFunc(s.demonDetectorPlugins, func(f *demonFinderPlugin) bool {
 			return strings.HasSuffix(api, f.ident.APIEndpointSuffix)
 		})
 		if idx < 0 {
 			continue
 		}
-		api, err := procfsroot.EvalSymlinks(api, wormhole, procfsroot.EvalFullPath)
+		apieval, err := procfsroot.EvalSymlinks(api, wormhole, procfsroot.EvalFullPath)
 		if err != nil {
-			log.Errorf("invalid API endpoint path %s in context of %s",
+			log.Errorf("invalid API endpoint path '%s' in context of '%s'",
 				api, wormhole)
 			continue
 		}
-		api = wormhole + api
+		api = wormhole + apieval
 		wg.Add(1)
 		ctx := s.contexter()
 		go func(ino uint64, api string, enginename string, creatorfn func(apipath string, pid model.PIDType) (watcher.Watcher, error)) {

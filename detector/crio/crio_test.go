@@ -7,16 +7,18 @@ package crio
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
 	"github.com/containerd/containerd"
 	"github.com/google/uuid"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
 	detect "github.com/siemens/turtlefinder/detector"
 	"github.com/thediveo/go-plugger/v3"
+	"github.com/thediveo/morbyd"
+	"github.com/thediveo/morbyd/build"
+	"github.com/thediveo/morbyd/run"
+	"github.com/thediveo/morbyd/session"
+	"github.com/thediveo/morbyd/timestamper"
 	criengine "github.com/thediveo/whalewatcher/engineclient/cri"
 	"github.com/thediveo/whalewatcher/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/test"
@@ -41,9 +43,9 @@ const (
 
 var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 
-	var providerCntr *dockertest.Resource
+	var providerCntr *morbyd.Container
 
-	BeforeAll(func() {
+	BeforeAll(func(ctx context.Context) {
 		if os.Getuid() != 0 {
 			Skip("needs root")
 		}
@@ -56,9 +58,15 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
 
+		By("creating a new Docker session for testing")
+		sess := Successful(morbyd.NewSession(ctx,
+			session.WithAutoCleaning("test.turtlefinder=detector/crio")))
+		DeferCleanup(func(ctx context.Context) {
+			By("auto-cleaning the session")
+			sess.Close(ctx)
+		})
+
 		By("spinning up a Docker container with stand-alone CRI-O, courtesy of the KinD k8s sig and cri-o.io")
-		pool := Successful(dockertest.NewPool("unix:///run/docker.sock"))
-		_ = pool.RemoveContainerByName(kindischName)
 		// The necessary container start arguments come from KinD's Docker node
 		// provisioner, see:
 		// https://github.com/kubernetes-sigs/kind/blob/3610f606516ccaa88aa098465d8c13af70937050/pkg/cluster/internal/providers/docker/provision.go#L133
@@ -79,47 +87,31 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 		//   --volume /var
 		//   --volume /lib/modules:/lib/modules:ro
 		//   kindisch-...
-		Expect(pool.Client.BuildImage(docker.BuildImageOptions{
-			Name:       img.Name,
-			ContextDir: "./_test/kindisch", // sorry, couldn't resist the pun.
-			Dockerfile: "Dockerfile",
-			BuildArgs: []docker.BuildArg{
-				{Name: "KINDEST_BASE_TAG", Value: test.KindestBaseImageTag},
-			},
-			OutputStream: io.Discard,
-		})).To(Succeed())
-		providerCntr = Successful(pool.RunWithOptions(
-			&dockertest.RunOptions{
-				Name:       kindischName,
-				Repository: img.Name,
-				Privileged: true,
-				Mounts: []string{
-					"/var", // well, this actually is an unnamed volume
-					"/dev/mapper:/dev/mapper",
-					"/lib/modules:/lib/modules:ro",
-				},
-				Tty: true,
-			}, func(hc *docker.HostConfig) {
-				hc.Init = false
-				hc.Tmpfs = map[string]string{
-					"/tmp": "",
-					"/run": "",
-				}
-				hc.Devices = []docker.Device{
-					{PathOnHost: "/dev/fuse"},
-				}
-			}))
-		DeferCleanup(func() {
-			By("removing the CRI-O Docker container")
-			Expect(pool.Purge(providerCntr)).To(Succeed())
-		})
+		Expect(sess.BuildImage(ctx, "./_test/kindisch",
+			build.WithTag(img.Name),
+			build.WithBuildArg("KINDEST_BASE_TAG="+test.KindestBaseImageTag),
+			build.WithOutput(timestamper.New(GinkgoWriter)))).
+			Error().NotTo(HaveOccurred())
+		providerCntr = Successful(sess.Run(ctx, img.Name,
+			run.WithName(kindischName),
+			run.WithAutoRemove(),
+			run.WithPrivileged(),
+			run.WithSecurityOpt("label=disable"),
+			run.WithCgroupnsMode("private"),
+			run.WithVolume("/var"),
+			run.WithVolume("/dev/mapper:/dev/mapper"),
+			run.WithVolume("/lib/modules:/lib/modules:ro"),
+			run.WithTmpfs("/tmp"),
+			run.WithTmpfs("/run"),
+			run.WithDevice("/dev/fuse"),
+			run.WithCombinedOutput(timestamper.New(GinkgoWriter))))
 
 		By("waiting for containerized CRI-O to become responsive")
-		Expect(providerCntr.Container.State.Pid).NotTo(BeZero())
+		pid := Successful(providerCntr.PID(ctx))
 		// apipath must not include absolute symbolic links, but already be
 		// properly resolved.
 		endpointPath := fmt.Sprintf("/proc/%d/root%s",
-			providerCntr.Container.State.Pid, "/run/crio/crio.sock")
+			pid, "/run/crio/crio.sock")
 		var cdclient *containerd.Client
 		Eventually(func() error {
 			var err error
@@ -145,11 +137,10 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 		var cricl *criengine.Client
 
 		By("waiting for the CRI-O API to become responsive")
-		Expect(providerCntr.Container.State.Pid).NotTo(BeZero())
+		pid := Successful(providerCntr.PID(ctx))
 		// apipath must not include absolute symbolic links, but already be
 		// properly resolved.
-		endpoint := fmt.Sprintf("/proc/%d/root/run/crio/crio.sock",
-			providerCntr.Container.State.Pid)
+		endpoint := fmt.Sprintf("/proc/%d/root/run/crio/crio.sock", pid)
 		Eventually(func() error {
 			var err error
 			cricl, err = criengine.New(endpoint, criengine.WithTimeout(1*time.Second))
@@ -232,7 +223,7 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 
 		By("running the detector on the API endpoints")
 		d := &Detector{}
-		wormhole := fmt.Sprintf("/proc/%d/root", providerCntr.Container.State.Pid)
+		wormhole := fmt.Sprintf("/proc/%d/root", pid)
 		ws := d.NewWatchers(ctx, 0, []string{
 			wormhole + "/run/crio/crio.sock",
 		})

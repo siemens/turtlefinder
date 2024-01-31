@@ -6,17 +6,19 @@ package turtlefinder
 
 import (
 	"context"
-	"io"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
 	"github.com/thediveo/lxkns/discover"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/lxkns/species"
-	"github.com/thediveo/whalewatcher/engineclient/containerd/test/ctr"
+	"github.com/thediveo/morbyd"
+	"github.com/thediveo/morbyd/build"
+	"github.com/thediveo/morbyd/exec"
+	"github.com/thediveo/morbyd/run"
+	"github.com/thediveo/morbyd/session"
+	"github.com/thediveo/morbyd/timestamper"
 	"github.com/thediveo/whalewatcher/engineclient/cri"
 	"github.com/thediveo/whalewatcher/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/test"
@@ -94,18 +96,20 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/containerd/containerd.sock$`),
 			))
 
-		By("starting an additional container engine in a container")
+		By("creating a new Docker session for testing")
+		sess := Successful(morbyd.NewSession(ctx,
+			session.WithAutoCleaning("test.turtlefinder=detector/containerd")))
+		DeferCleanup(func(ctx context.Context) {
+			By("auto-cleaning the session")
+			sess.Close(ctx)
+		})
+
 		By("spinning up a Docker container with stand-alone containerd, courtesy of the KinD k8s sig")
-		pool := Successful(dockertest.NewPool("unix:///run/docker.sock"))
-		_ = pool.RemoveContainerByName(kindischName)
 		// The necessary container start arguments come from KinD's Docker node
 		// provisioner, see:
 		// https://github.com/kubernetes-sigs/kind/blob/3610f606516ccaa88aa098465d8c13af70937050/pkg/cluster/internal/providers/docker/provision.go#L133
 		//
 		// Please note that --privileged already implies switching off AppArmor.
-		//
-		// Please note further, that currently some Docker client CLI flags
-		// don't translate into dockertest-supported options.
 		//
 		// docker run -it --rm --name kindisch-...
 		//   --privileged
@@ -118,40 +122,24 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		//   --volume /var
 		//   --volume /lib/modules:/lib/modules:ro
 		//   kindisch-...
-		Expect(pool.Client.BuildImage(docker.BuildImageOptions{
-			Name:       img.Name,
-			ContextDir: "./detector/containerd/_test/kindisch", // sorry, couldn't resist the pun.
-			Dockerfile: "Dockerfile",
-			BuildArgs: []docker.BuildArg{
-				{Name: "KINDEST_BASE_TAG", Value: test.KindestBaseImageTag},
-			},
-			OutputStream: io.Discard,
-		})).To(Succeed())
-		providerCntr := Successful(pool.RunWithOptions(
-			&dockertest.RunOptions{
-				Name:       kindischName,
-				Repository: img.Name,
-				Privileged: true,
-				Mounts: []string{
-					"/var", // well, this actually is an unnamed volume
-					"/dev/mapper:/dev/mapper",
-					"/lib/modules:/lib/modules:ro",
-				},
-				Tty: true,
-			}, func(hc *docker.HostConfig) {
-				hc.Init = false
-				hc.Tmpfs = map[string]string{
-					"/tmp": "",
-					"/run": "",
-				}
-				hc.Devices = []docker.Device{
-					{PathOnHost: "/dev/fuse"},
-				}
-			}))
-		DeferCleanup(func() {
-			By("removing the containerd Docker container")
-			_ = pool.Purge(providerCntr)
-		})
+		Expect(sess.BuildImage(ctx, "./detector/containerd/_test/kindisch",
+			build.WithTag(img.Name),
+			build.WithBuildArg("KINDEST_BASE_TAG="+test.KindestBaseImageTag),
+			build.WithOutput(timestamper.New(GinkgoWriter)))).
+			Error().NotTo(HaveOccurred())
+		providerCntr := Successful(sess.Run(ctx, img.Name,
+			run.WithName(kindischName),
+			run.WithAutoRemove(),
+			run.WithPrivileged(),
+			run.WithSecurityOpt("label=disable"),
+			run.WithCgroupnsMode("private"),
+			run.WithVolume("/var"),
+			run.WithVolume("/dev/mapper:/dev/mapper"),
+			run.WithVolume("/lib/modules:/lib/modules:ro"),
+			run.WithTmpfs("/tmp"),
+			run.WithTmpfs("/run"),
+			run.WithDevice("/dev/fuse"),
+			run.WithCombinedOutput(timestamper.New(GinkgoWriter))))
 
 		// This basically tests that scans correctly detect the newly
 		// starting/started containerd process and start two watchers for it:
@@ -174,17 +162,23 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			))
 
 		By("pulling a busybox image (if necessary)")
-		ctr.Successfully(providerCntr,
-			"-n", testNamespace,
-			"image", "pull", testImageRef)
+		ctr := Successful(providerCntr.Exec(ctx,
+			exec.Command("ctr",
+				"-n", testNamespace,
+				"image", "pull", testImageRef),
+			exec.WithCombinedOutput(timestamper.New(GinkgoWriter))))
+		Expect(ctr.Wait(ctx)).To(BeZero())
 
 		By("creating a new container+task and starting it")
-		ctr.Successfully(providerCntr,
-			"-n", testNamespace,
-			"run", "-d",
-			testImageRef,
-			testContainerName,
-			"/bin/sleep", "30s")
+		ctr = Successful(providerCntr.Exec(ctx,
+			exec.Command("ctr",
+				"-n", testNamespace,
+				"run", "-d",
+				testImageRef,
+				testContainerName,
+				"/bin/sleep", "30s"),
+			exec.WithCombinedOutput(timestamper.New(GinkgoWriter))))
+		Expect(ctr.Wait(ctx)).To(BeZero())
 
 		Eventually(func() model.Containers {
 			return discover().Containers
@@ -197,7 +191,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 						HaveKeyWithValue(TurtlefinderContainerPrefixLabelName, kindischName)))))
 
 		By("stopping the containerized container engine")
-		Expect(pool.Purge(providerCntr)).To(Succeed())
+		providerCntr.Kill(ctx)
 
 		By("waiting for the containerized containerd engine to vanish")
 		Eventually(ctx, func() []*model.ContainerEngine {

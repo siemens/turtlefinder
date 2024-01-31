@@ -11,8 +11,11 @@ import (
 
 	detect "github.com/siemens/turtlefinder/detector"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/thediveo/go-plugger/v3"
+	"github.com/thediveo/morbyd"
+	"github.com/thediveo/morbyd/run"
+	"github.com/thediveo/morbyd/session"
+	"github.com/thediveo/morbyd/timestamper"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -32,28 +35,27 @@ const goroutinesUnwindPolling = 250 * time.Millisecond
 
 var _ = Describe("Docker detector", Ordered, func() {
 
-	var pool *dockertest.Pool
+	var sess *morbyd.Session
 
-	BeforeAll(timeout, func(_ context.Context) {
+	BeforeAll(timeout, func(ctx context.Context) {
 		if os.Getuid() != 0 {
 			Skip("needs root")
 		}
 
-		By("cleaning up any leftovers")
-		pool = Successful(dockertest.NewPool(""))
-		_ = pool.RemoveContainerByName(testWorkloadName)
+		By("creating a new Docker session for testing")
+		sess = Successful(morbyd.NewSession(ctx,
+			session.WithAutoCleaning("test.turtlefinder=detector/moby")))
+		DeferCleanup(func(ctx context.Context) {
+			By("auto-cleaning the session")
+			sess.Close(ctx)
+		})
 
 		By("creating a test workload")
-		Expect(pool.RunWithOptions(&dockertest.RunOptions{
-			Repository: "busybox",
-			Tag:        "latest",
-			Name:       testWorkloadName,
-			Cmd:        []string{"/bin/sleep", "120s"},
-		})).Error().NotTo(HaveOccurred(),
-			"creating container %s", testWorkloadName)
-		DeferCleanup(timeout, func(_ context.Context) {
-			_ = pool.RemoveContainerByName(testWorkloadName)
-		})
+		Expect(sess.Run(ctx, "busybox",
+			run.WithName(testWorkloadName),
+			run.WithAutoRemove(),
+			run.WithCommand("/bin/sh", "-c", "while true; do sleep 1; done"),
+			run.WithCombinedOutput(timestamper.New(GinkgoWriter)))).Error().NotTo(HaveOccurred())
 	})
 
 	BeforeEach(timeout, func(_ context.Context) {

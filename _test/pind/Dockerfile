@@ -7,5 +7,6 @@ RUN dnf -y install \
                 --exclude container-selinux && \
         dnf clean all && \
         rm -rf /var/cache /var/log/dnf* /var/log/yum.* && \
+        systemctl mask systemd-logind.service getty.service getty.target && \
         systemctl enable podman.socket
 CMD [ "/usr/sbin/init" ]

@@ -10,7 +10,7 @@
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
 [![Go Report Card](https://goreportcard.com/badge/github.com/siemens/turtlefinder)](https://goreportcard.com/report/github.com/siemens/turtlefinder)
-![Coverage](https://img.shields.io/badge/Coverage-87.8%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-87.4%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)

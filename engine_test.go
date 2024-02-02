@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/onsi/gomega/types"
-	"github.com/ory/dockertest/v3"
+	"github.com/thediveo/morbyd"
+	"github.com/thediveo/morbyd/run"
+	"github.com/thediveo/morbyd/session"
+	"github.com/thediveo/morbyd/timestamper"
 	"github.com/thediveo/whalewatcher/watcher/moby"
 
 	"github.com/siemens/turtlefinder/internal/test"
@@ -19,6 +22,7 @@ import (
 	. "github.com/onsi/gomega/gleak"
 	. "github.com/siemens/turtlefinder/matcher"
 	. "github.com/thediveo/fdooze"
+	. "github.com/thediveo/success"
 )
 
 // testEngineWorkloadName specifies the name of a Docker container test
@@ -55,17 +59,20 @@ var _ = Describe("container engine", Serial, Ordered, func() {
 
 		Consistently(engine.IsAlive).Should(BeTrue())
 
-		pool, err := dockertest.NewPool("")
-		Expect(err).NotTo(HaveOccurred())
-		_ = pool.RemoveContainerByName(testEngineWorkloadName)
-		_, err = pool.RunWithOptions(&dockertest.RunOptions{
-			Repository: "busybox",
-			Tag:        "latest",
-			Name:       testEngineWorkloadName,
-			Cmd:        []string{"/bin/sleep", "120s"},
+		By("creating a new Docker session for testing")
+		sess := Successful(morbyd.NewSession(ctx,
+			session.WithAutoCleaning("test.turtlefinder=turtlefinder")))
+		DeferCleanup(func(ctx context.Context) {
+			By("auto-cleaning the session")
+			sess.Close(ctx)
 		})
-		Expect(err).NotTo(HaveOccurred(), "creating container %s", testEngineWorkloadName)
-		defer func() { _ = pool.RemoveContainerByName(testEngineWorkloadName) }()
+
+		By("creating a canary container")
+		_ = Successful(sess.Run(ctx, "busybox",
+			run.WithName(testEngineWorkloadName),
+			run.WithAutoRemove(),
+			run.WithCommand("/bin/sh", "-c", "while true; do sleep 1; done"),
+			run.WithCombinedOutput(timestamper.New(GinkgoWriter))))
 
 		// Give leeway for the container workload discovery to reflect the
 		// correct situation even under heavy system load. And remember to pass

@@ -59,7 +59,12 @@ func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
 	// case of a synchronization or other error, so this transient go routine is
 	// bound to terminate for any outcome sooner or later.
 	go func() {
-		<-w.Ready()
+		select {
+		case <-w.Ready():
+			// fall through
+		case <-ctx.Done():
+			return // avoid leaking this go routine when ctx already done.
+		}
 		// Getting the engine ID should be carried out swiftly, so we timebox
 		// it.
 		idctx, idcancel := context.WithTimeout(ctx, 2*time.Second)

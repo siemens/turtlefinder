@@ -10,10 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/siemens/turtlefinder/internal/test"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/whalewatcher/watcher"
-
-	"github.com/siemens/turtlefinder/internal/test"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

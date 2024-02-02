@@ -160,6 +160,6 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License and Copyright
 
-(c) Siemens AG 2023
+(c) Siemens AG 2023‒24
 
 [SPDX-License-Identifier: MIT](LICENSE)

@@ -6,6 +6,7 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"runtime"
 	"strconv"
 	"strings"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/containerizer"
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/procfsroot"
 	"github.com/thediveo/whalewatcher/watcher"
@@ -131,8 +131,8 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 		})
 	}
 	f.engineplugins = engineplugins
-	log.Infof("available engine process detector plugins: %s",
-		strings.Join(plugger.Group[detector.Detector]().Plugins(), ", "))
+	slog.Info("available engine process detector plugins",
+		slog.String("plugins", strings.Join(plugger.Group[detector.Detector]().Plugins(), ",")))
 	// Query the available activator finder plugins.
 	activators := plugger.Group[activator.Detector]().PluginsSymbols()
 	activatorplugins := make([]activatorPlugin, 0, len(activators))
@@ -142,8 +142,8 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 			pluginname: activator.Plugin,
 		})
 	}
-	log.Infof("available socket activator detector plugins: %s",
-		strings.Join(plugger.Group[activator.Detector]().Plugins(), ", "))
+	slog.Info("available socket activator detector plugins",
+		slog.String("plugins", strings.Join(plugger.Group[activator.Detector]().Plugins(), ",")))
 	f.activatorplugins = activatorplugins
 	return f
 }
@@ -175,7 +175,7 @@ func (f *TurtleFinder) Containers(
 	// query. Please note that the number of parallel engine queries is bounded
 	// over *all parallel calls* to this method, and not just within a single
 	// call.
-	log.Infof("consulting %d container engines ... in parallel", len(allEngines))
+	slog.Info("consulting container engines in parallel", slog.Int("count", len(allEngines)))
 	enginecontainers := make(chan []*model.Container, len(allEngines))
 	var theendisnear atomic.Int64 // track amount of engine results
 	theendisnear.Add(int64(len(allEngines)))
@@ -374,13 +374,15 @@ NextProcess:
 	for _, engineproc := range newengineprocs {
 		go func(engineproc engineProcess) {
 			defer wg.Done()
-			log.Debugf("scanning new potential engine process %s (%d) for API endpoints...",
-				engineproc.proc.Name, engineproc.proc.PID)
+			slog.Debug("scanning new potential engine process for API endpoints",
+				slog.String("name", engineproc.proc.Name),
+				slog.Int("pid", int(engineproc.proc.PID)))
 			// Does this process have any listening unix sockets that might act as
 			// API endpoints?
 			apisox := discoverAPISocketsOfProcess(engineproc.proc.PID)
 			if apisox == nil {
-				log.Debugf("process %d no API endpoint found", engineproc.proc.PID)
+				slog.Debug("no API endpoint found",
+					slog.Int("pid", int(engineproc.proc.PID)))
 				return
 			}
 			// Translate the API pathnames so that we can access them from our
@@ -391,8 +393,8 @@ NextProcess:
 					"/root"
 				apipath, err := procfsroot.EvalSymlinks(apipath, wormhole, procfsroot.EvalFullPath)
 				if err != nil {
-					log.Warnf("invalid API endpoint at %s in the context of %s",
-						apipath, wormhole)
+					slog.Warn("invalid API endpoint",
+						slog.String("api", apipath), slog.String("context", wormhole))
 					apisox[idx] = ""
 					continue
 				}
@@ -436,8 +438,8 @@ NextProcess:
 		if _, ok := f.activators[activatorproc.PID]; ok {
 			continue
 		}
-		log.Infof("found new socket activator process '%s' with PID %d",
-			activatorproc.Name, activatorproc.PID)
+		slog.Info("found new socket activator process",
+			slog.String("name", activatorproc.Name), slog.Int("pid", int(activatorproc.PID)))
 		f.activators[activatorproc.PID] = newSocketActivator(activatorproc,
 			f.initialsyncwait,
 			f.contexter,

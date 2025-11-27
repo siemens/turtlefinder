@@ -9,9 +9,8 @@ package test
 
 import (
 	"bytes"
+	"log/slog"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 
 	. "github.com/onsi/ginkgo/v2"
 )
@@ -30,22 +29,16 @@ import (
 func LogToGinkgo() {
 	// temporarily send log output to Ginkgo, so the latter can show it to
 	// us when a test fails.
-	std := logrus.StandardLogger()
-	stdout := std.Out
-	stdformatter := std.Formatter
-	formatter := &logrus.TextFormatter{
-		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
-		FullTimestamp:   true,
-	}
-	gw := GinkgoWriter
-	GinkgoWriter = newBuffer(GinkgoWriter)
-	std.Out = GinkgoWriter
-	std.Formatter = formatter
-	DeferCleanup(func() {
-		GinkgoWriter = gw
-		std.Out = stdout
-		std.Formatter = stdformatter
-	})
+	oldGw := GinkgoWriter
+	DeferCleanup(func() { GinkgoWriter = oldGw })
+	GinkgoWriter = newBuffer(oldGw)
+
+	oldSlogger := slog.Default()
+	DeferCleanup(func() { slog.SetDefault(oldSlogger) })
+	slog.SetDefault(slog.New(
+		slog.NewTextHandler(GinkgoWriter, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		})))
 }
 
 // buffer is “-race”-safe, can be queried for its contents, and wraps a

@@ -6,12 +6,12 @@ package podman
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/docker/docker/client" // priceless
 	"github.com/siemens/turtlefinder/activator"
 	"github.com/thediveo/go-plugger/v3"
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	mobyengine "github.com/thediveo/whalewatcher/engineclient/moby"
 	"github.com/thediveo/whalewatcher/watcher"
@@ -61,12 +61,13 @@ func (e *Engine) NewWatcher(ctx context.Context, pid model.PIDType, api string) 
 	// not sufficient to just create the watcher, we also need to check that we
 	// actually can successfully talk with the daemon. Querying the daemon's
 	// info sufficies and ensures that a partiular API path is useful.
-	log.Debugf("dialing podman endpoint 'unix://%s'", api)
+	slog.Debug("dialing podman endpoint", slog.String("api", api))
 	w, err = moby.New("unix://"+api, nil,
 		mobyengine.WithPID(int(pid)),
 		mobyengine.WithDemonType(Type))
 	if err != nil {
-		log.Debugf("podman API endpoint 'unix://%s' failed: %s", api, err.Error())
+		slog.Debug("podman API endpoint failed",
+			slog.String("api", api), slog.String("err", err.Error()))
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -74,11 +75,13 @@ func (e *Engine) NewWatcher(ctx context.Context, pid model.PIDType, api string) 
 	_, err = w.Client().(*client.Client).Info(ctx)
 	if ctxerr := ctx.Err(); ctxerr != nil {
 		err = ctxerr
-		log.Debugf("Docker API Info call context hit deadline: %s", err.Error())
+		slog.Debug("Docker API Info call context hit deadline",
+			slog.String("err", err.Error()))
 		return nil
 	}
 	if err != nil {
-		log.Debugf("podman API endpoint 'unix://%s' failed: %s", api, err.Error())
+		slog.Debug("podman API endpoint failed",
+			slog.String("api", api), slog.String("err", err.Error()))
 		return nil
 	}
 	return w

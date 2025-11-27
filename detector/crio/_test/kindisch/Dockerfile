@@ -20,6 +20,7 @@ RUN OS=Debian_11 && VERSION=1.28 \
     && apt-get upgrade -y \
     && apt-get install -y -o Dpkg::Options::="--force-confold" cri-o cri-o-runc \
     && systemctl enable crio \
+    && systemctl mask systemd-logind.service getty.service getty.target \
     && apt-get clean -y \
     && rm -rf \
         /var/cache/debconf/* \

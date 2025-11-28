@@ -6,9 +6,9 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/whalewatcher/watcher"
 )
@@ -52,12 +52,13 @@ func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *
 		PPIDHint: ppidhint,
 	}
 	cancel() // ensure to quickly release cancel, silence linter
-	log.Infof("watching %s container engine (PID %d) with ID '%s', version '%s'",
-		w.Type(), w.PID(), e.ID, e.Version)
+	slog.Info("watching container engine",
+		slog.String("type", w.Type()), slog.String("id", e.ID), slog.String("version", e.Version),
+		slog.Int("pid", w.PID()))
 	go func() {
 		err := e.Watcher.Watch(ctx)
-		log.Infof("stopped watching container engine (PID %d), reason: %s",
-			w.PID(), err.Error())
+		slog.Info("stopped watching container engine due to failure",
+			slog.Int("pid", w.PID()), slog.String("err", err.Error()))
 		close(e.Done)
 		e.Close()
 	}()

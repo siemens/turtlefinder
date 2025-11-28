@@ -5,6 +5,7 @@
 package turtlefinder
 
 import (
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,7 +16,6 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/siemens/turtlefinder/activator"
 	"github.com/thediveo/go-plugger/v3"
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/procfsroot"
 	"github.com/thediveo/whalewatcher/watcher"
@@ -90,8 +90,8 @@ func newSocketActivator(
 	}
 	muDaemonDetectorPlugins.Unlock()
 	if logPlugins {
-		log.Infof("available socket-activated engine process detector plugins: %s",
-			strings.Join(plugger.Group[activator.EngineFinder]().Plugins(), ", "))
+		slog.Info("available socket-activated engine process detector plugins",
+			slog.String("plugins", strings.Join(plugger.Group[activator.EngineFinder]().Plugins(), ",")))
 	}
 	s := &socketActivatorProcess{
 		proc:                 proc,
@@ -115,7 +115,8 @@ func newSocketActivator(
 func (s *socketActivatorProcess) update(wg *sync.WaitGroup) {
 	rawsox, hash, err := s.rawSocketFdsWithHash()
 	if err != nil {
-		log.Errorf("cannot update socket activator state, reason: %s", err.Error())
+		slog.Error("cannot update socket activator state",
+			slog.String("err", err.Error()))
 		return
 	}
 	newapis := s.discoverAPIPaths(rawsox, hash)
@@ -224,8 +225,8 @@ func (s *socketActivatorProcess) activateAndWatch(
 		}
 		apieval, err := procfsroot.EvalSymlinks(api, wormhole, procfsroot.EvalFullPath)
 		if err != nil {
-			log.Errorf("invalid API endpoint path '%s' in context of '%s'",
-				api, wormhole)
+			slog.Error("invalid API endpoint",
+				slog.String("api", api), slog.String("context", wormhole))
 			continue
 		}
 		api = wormhole + apieval

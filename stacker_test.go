@@ -6,6 +6,7 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -26,18 +27,17 @@ import (
 	"github.com/thediveo/whalewatcher/watcher/moby"
 	"golang.org/x/exp/slices"
 
-	testlog "github.com/siemens/turtlefinder/internal/test"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	. "github.com/siemens/turtlefinder/matcher"
 	. "github.com/thediveo/fdooze"
 	. "github.com/thediveo/success"
 )
 
 const (
-	kindischName = "turtlefinder-containerd"
+	kindischName = "turtlefinder-stacker"
 
 	testNamespace     = "testing"
 	testContainerName = "canary"
@@ -45,8 +45,6 @@ const (
 )
 
 var _ = Describe("turtles and elephants", Serial, Ordered, func() {
-
-	BeforeEach(testlog.LogToGinkgo)
 
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
@@ -56,6 +54,12 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
+	})
+
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 
 	It("prefixes and stacks turtles and elephants", NodeTimeout(60*time.Second), func(ctx context.Context) {
@@ -90,10 +94,10 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
 			Should(ContainElements(
-				HaveEngine(moby.Type, `^unix:///proc/\d+/root/run/docker.sock$`),
+				HaveEngine(moby.Type, `^unix:///proc/\d+/root/(?:var/)?run/docker.sock$`),
 				// In a Docker Desktop on WSL2 configuration, Docker runs inside a
 				// containerd, and there's also Docker's containerd sidekick...
-				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/containerd/containerd.sock$`),
+				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/(?:docker/)?containerd/containerd.sock$`),
 			))
 
 		By("creating a new Docker session for testing")
@@ -154,8 +158,10 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			})
 			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
-			Should(HaveExactElements(
-				HaveField("Type", containerd.Type),
+			// running this inside a host with devcontainers and
+			// dockers-in-docker and inside the host PID namespace will usually
+			// turn up much more than we bargained for, so no exact match here.
+			Should(ContainElements(
 				HaveField("Type", containerd.Type),
 				HaveField("Type", moby.Type),
 				HaveField("Type", cri.Type),

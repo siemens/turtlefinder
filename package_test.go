@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/thediveo/lxkns/log/logrus"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

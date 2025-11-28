@@ -8,12 +8,13 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/siemens/turtlefinder/internal/test"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/thediveo/lxkns/model"
 	engineclient "github.com/thediveo/whalewatcher/engineclient/moby"
 	"github.com/thediveo/whalewatcher/watcher"
@@ -30,14 +31,20 @@ const watchSlowSyncWait = watchSyncMaxWait + 2*time.Second
 
 var _ = Describe("watch", Serial, func() {
 
-	BeforeEach(test.LogToGinkgo)
-
 	BeforeEach(func() {
 		goodgos := Goroutines()
 		DeferCleanup(func() {
 			Eventually(Goroutines).Within(5 * time.Second).ProbeEvery(100 * time.Second).
 				ShouldNot(HaveLeaked(goodgos))
 		})
+	})
+
+	var slogout fmt.Stringer
+
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		slogout = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 
 	Context("connecting to a known engine process and starting a watch", func() {
@@ -53,12 +60,12 @@ var _ = Describe("watch", Serial, func() {
 			Eventually(w.Ready).Should(BeClosed())
 			// nota bene: the "synchronized" log comes from another go routine, so
 			// we need to wait for it.
-			Eventually(GinkgoWriter.(fmt.Stringer).String).Should(MatchRegexp(
-				`beginning synchronization to 'docker.com' engine .*\n` +
-					`.*synchronized to 'docker.com' container engine .* with ID ` +
-					`'(?:[A-Z0-9]{4}(?::[A-Z0-9]{4}){11})|(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'`))
+			Eventually(slogout.String).Should(MatchRegexp(
+				`"beginning synchronization with engine" type=docker\.com .*\n` +
+					`.*"successfully synchronized with container engine" type=docker\.com .* ` +
+					`id=(?:[A-Z0-9]{4}(?::[A-Z0-9]{4}){11})|(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})`))
 			cancel()
-			Eventually(GinkgoWriter.(fmt.Stringer).String).Should(ContainSubstring("terminated watch"))
+			Eventually(slogout.String).Should(ContainSubstring(`"terminated engine workload watch"`))
 		})
 
 		It("returns early when the context gets cancelled", func(ctx context.Context) {
@@ -70,9 +77,9 @@ var _ = Describe("watch", Serial, func() {
 			startWatch(ctx, w, watchSyncMaxWait)
 			Expect(time.Since(start)).To(BeNumerically("<", watchSyncMaxWait))
 			Eventually(w.Ready).Should(BeClosed())
-			Eventually(GinkgoWriter.(fmt.Stringer).String).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
+			Eventually(slogout.String).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
 				Should(MatchRegexp(
-					`terminated watch for 'docker.com' container engine`))
+					`"terminated engine workload watch" type=docker\.com`))
 		})
 
 		It("doesn't wait endlessly for synchronization", func(ctx context.Context) {
@@ -86,12 +93,12 @@ var _ = Describe("watch", Serial, func() {
 			Expect(time.Since(start)).To(And(
 				BeNumerically(">=", watchSyncMaxWait),
 				BeNumerically("<", watchSlowSyncWait)))
-			Eventually(GinkgoWriter.(fmt.Stringer).String).Should(MatchRegexp(
-				`beginning synchronization to 'docker.com' engine .*\n.*'docker.com' container engine .* not yet synchronized`))
+			Eventually(slogout.String).Should(MatchRegexp(
+				`"beginning synchronization with engine" type=docker\.com .*\n.*"container engine not yet synchronized.*" type=docker\.com`))
 			Eventually(w.Ready).Within((watchSlowSyncWait - watchSyncMaxWait) * 2).Should(BeClosed())
 			cancel()
-			Eventually(GinkgoWriter.(fmt.Stringer).String).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
-				Should(ContainSubstring("terminated watch"))
+			Eventually(slogout.String).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
+				Should(ContainSubstring("terminated engine workload watch"))
 		})
 
 	})
@@ -113,7 +120,7 @@ var _ = Describe("watch", Serial, func() {
 			scanner := bufio.NewScanner(netunix)
 			for scanner.Scan() {
 				line := scanner.Text()
-				if !strings.HasSuffix(line, " /run/docker.sock") {
+				if !strings.HasSuffix(line, " /run/docker.sock") && !strings.HasSuffix(line, " /var/run/docker.sock") {
 					continue
 				}
 				fields := strings.Fields(line)
@@ -153,8 +160,8 @@ var _ = Describe("watch", Serial, func() {
 				Should(BeClosed())
 			By("winding down")
 			cancel()
-			Eventually(GinkgoWriter.(fmt.Stringer).String).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
-				Should(ContainSubstring("terminated watch"))
+			Eventually(slogout.String).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
+				Should(ContainSubstring("terminated engine workload watch"))
 		})
 
 	})

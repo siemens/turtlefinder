@@ -6,11 +6,12 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/siemens/turtlefinder/internal/test"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/whalewatcher/watcher"
 
@@ -32,7 +33,11 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 
 	BeforeAll(dockerEngineFinderOnly)
 
-	BeforeEach(test.LogToGinkgo)
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
 
 	BeforeEach(clearCachedDetectorPlugins)
 
@@ -47,6 +52,9 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 	It("discovers new API paths", func(ctx context.Context) {
 		if os.Getuid() != 0 {
 			Skip("needs root")
+		}
+		if string(Successful(os.ReadFile("/proc/1/comm"))) == "docker-init\n" {
+			Skip("needs systemd as PID 1")
 		}
 
 		By("using PID 1 systemd as an already-present socket activator")
@@ -64,7 +72,7 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		Expect(hash).NotTo(BeZero())
 		newapis := s.discoverAPIPaths(rawsox, hash)
 		Expect(s.hash).To(Equal(hash))
-		Expect(newapis).To(ContainElement("/run/docker.sock"))
+		Expect(newapis).To(ContainElement(MatchRegexp("^/(?:var/)?run/docker.sock$")))
 
 		Expect(s.discoverAPIPaths(rawsox, hash)).To(BeNil(), "unexpected/invalid state change")
 
@@ -98,6 +106,9 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 	It("discovers and watches socket-activatable engines", func(ctx context.Context) {
 		if os.Getuid() != 0 {
 			Skip("needs root")
+		}
+		if string(Successful(os.ReadFile("/proc/1/comm"))) == "docker-init\n" {
+			Skip("needs systemd as PID 1")
 		}
 
 		By("using PID 1 systemd as an already-present socket activator")

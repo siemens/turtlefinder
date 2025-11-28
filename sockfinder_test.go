@@ -63,7 +63,10 @@ var _ = Describe("socket finder", func() {
 
 	It("finds Docker API unix socket", func() {
 		sox := listeningUDSVisibleToProcess(model.PIDType(os.Getpid()))
-		Expect(sox).To(ContainElement("/run/docker.sock"))
+		// when inside devcontainer, the docker features will put the genuine
+		// socket into /var/run with /run referencing it, instead of what
+		// standard Docker package setup does, so we have to cover both situations.
+		Expect(sox).To(ContainElement(MatchRegexp("^/(?:var/)?run/docker.sock$")))
 	})
 
 	It("finds listening canary unix socket", func() {

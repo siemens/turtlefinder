@@ -7,12 +7,13 @@ package turtlefinder
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/siemens/turtlefinder/activator/podman"
-	"github.com/siemens/turtlefinder/internal/test"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/siemens/turtlefinder/matcher"
 	"github.com/thediveo/lxkns/discover"
 	"github.com/thediveo/lxkns/model"
@@ -41,7 +42,7 @@ const (
 	canaryContainerName = "canary"
 	canaryImageRef      = "docker.io/library/busybox:latest"
 
-	spinupTimeout = 10 * time.Second
+	spinupTimeout = 30 * time.Second
 	spinupPolling = 500 * time.Millisecond
 )
 
@@ -112,8 +113,6 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 
 	BeforeEach(clearCachedDetectorPlugins)
 
-	BeforeEach(test.LogToGinkgo)
-
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
@@ -122,6 +121,12 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 				ShouldNot(HaveLeaked(goodgos))
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
+	})
+
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 
 	It("it finds and updates socket activators", func(ctx context.Context) {
@@ -150,9 +155,9 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 	// tag :D
 	//
 	// In order to avoid all the "nice" problems with installing podman distro
-	// packages side-by-side into the host, just to find out that the way the
-	// distro packagers made it destroys the docker installation, we run a
-	// podman demon ("don't call ..." *plonk* ) inside a Docker container, as a
+	// packages side-by-side into the host, just to find out that the distro
+	// packagers destroy any existing docker installation, we run a podman demon
+	// ("don't call ..." *plonk* ) inside a Docker container, as a
 	// socket-activated service. And we create a podman workload inside that
 	// container in the insane hope of discovering it. Ah, so many demons...
 	It("finds docker, containerd, and podman-in-docker", func(ctx context.Context) {
@@ -179,7 +184,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 		}).Within(spinupTimeout).ProbeEvery(spinupPolling).
 			Should(ContainElements(
 				HaveEngine(moby.Type, `^unix:///proc/\d+/root/run/docker.sock$`),
-				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/containerd/containerd.sock$`),
+				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/(?:docker/)?containerd/containerd.sock$`),
 				HaveEngine(podman.Type, `^unix:///proc/\d+/root/run/podman/podman.sock$`),
 			))
 

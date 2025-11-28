@@ -6,6 +6,7 @@ package containerd
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"strings"
 	"time"
@@ -15,7 +16,6 @@ import (
 
 	cdclient "github.com/containerd/containerd"
 	"github.com/thediveo/go-plugger/v3"
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	cdengine "github.com/thediveo/whalewatcher/engineclient/containerd"
 	criengine "github.com/thediveo/whalewatcher/engineclient/cri"
@@ -60,17 +60,20 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		// successfully talk with the daemon. Querying the daemon's version
 		// information sufficies and ensures that a partiular API path is
 		// useful.
-		log.Debugf("dialing containerd endpoint '%s'", apipathname)
+		slog.Debug("dialing containerd endpoint", slog.String("api", apipathname))
 		w, err := containerd.New(apipathname, nil, cdengine.WithPID(int(pid)))
 		if err != nil {
-			log.Debugf("containerd API endpoint '%s' failed: %s", apipathname, err.Error())
+			slog.Debug("containerd API endpoint failed",
+				slog.String("api", apipathname), slog.String("err",
+					err.Error()))
 			continue
 		}
 		versionctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		_, err = w.Client().(*cdclient.Client).Version(versionctx)
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			cancel()
-			log.Debugf("containerd API Info call context hit deadline: %s", err.Error())
+			slog.Debug("containerd API Info call context hit deadline",
+				slog.String("err", err.Error()))
 			w.Close()
 			continue
 		}
@@ -84,7 +87,7 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		// Do we get the bonus CRI API...?
 		criw, err := cri.New(apipathname, nil, criengine.WithPID(int(pid)))
 		if err != nil {
-			log.Debugf("containerd CRI API disabled: %s", err.Error())
+			slog.Debug("containerd CRI API disabled", slog.String("err", err.Error()))
 			return watchers // NOPE!
 		}
 		// Creating the engine client usually succeeds, even if the CRI API
@@ -96,13 +99,13 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		cancel()
 		if err != nil {
 			criw.Close()
-			log.Debugf("containerd CRI API disabled: %s", err.Error())
+			slog.Debug("containerd CRI API disabled", slog.String("err", err.Error()))
 			return watchers // NOPE!
 		}
 
 		watchers = append(watchers, criw)
 		return watchers
 	}
-	log.Errorf("no working containerd API endpoint found.")
+	slog.Error("no working containerd API endpoint found")
 	return nil
 }

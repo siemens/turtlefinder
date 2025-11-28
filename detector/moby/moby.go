@@ -6,6 +6,7 @@ package moby
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/thediveo/go-plugger/v3"
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	mobyengine "github.com/thediveo/whalewatcher/engineclient/moby"
 	"github.com/thediveo/whalewatcher/watcher"
@@ -47,13 +47,13 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		// that we actually can successfully talk with the daemon. Querying the
 		// daemon's info sufficies and ensures that a partiular API path is
 		// useful.
-		log.Debugf("dialing Docker endpoint 'unix://%s'", apipathname)
+		slog.Debug("dialing Docker endpoint", slog.String("api", apipathname))
 		w, err := moby.New("unix://"+apipathname, nil, mobyengine.WithPID(int(pid)))
 		if err == nil {
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			_, err = w.Client().(*client.Client).Info(ctx)
 			if ctxerr := ctx.Err(); ctxerr != nil {
-				log.Debugf("Docker API Info call context hit deadline: %s", ctxerr.Error())
+				slog.Debug("Docker API Info call context hit deadline", slog.String("err", ctxerr.Error()))
 			}
 			cancel()
 			if err == nil {
@@ -61,8 +61,8 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 			}
 			w.Close()
 		}
-		log.Debugf("Docker API endpoint 'unix://%s' failed: %s", apipathname, err.Error())
+		slog.Debug("Docker API endpoint", slog.String("api", apipathname), slog.String("err", err.Error()))
 	}
-	log.Errorf("no working Docker API endpoint found.")
+	slog.Error("no working Docker API endpoint found")
 	return nil
 }

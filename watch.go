@@ -7,10 +7,10 @@ package turtlefinder
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"time"
 
-	"github.com/thediveo/lxkns/log"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/whalewatcher/watcher"
 )
@@ -42,8 +42,8 @@ const (
 // startWatch emits informational log messages about the synchronization start
 // and end.
 func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
-	log.Infof("beginning synchronization to '%s' engine (PID %d) at API %s",
-		w.Type(), w.PID(), w.API())
+	slog.Info("beginning synchronization with engine",
+		slog.String("type", w.Type()), slog.Int("pid", w.PID()), slog.String("api", w.API()))
 	// Start the watch including the initial synchronization on a separate go
 	// routine and controlled by the context given to us.
 	go func() {
@@ -51,8 +51,9 @@ func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
 		if err == nil {
 			return
 		}
-		log.Warnf("terminated watch for '%s' container engine (PID %d), reason: %s",
-			w.Type(), w.PID(), err.Error())
+		slog.Warn("terminated engine workload watch",
+			slog.String("type", w.Type()), slog.Int("pid", w.PID()),
+			slog.String("err", err.Error()))
 	}()
 	// Wait in the background for the synchronization to complete and then
 	// report the engine ID. The ready channel of a whale watcher also closes in
@@ -69,8 +70,9 @@ func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
 		// it.
 		idctx, idcancel := context.WithTimeout(ctx, 2*time.Second)
 		defer idcancel()
-		log.Infof("synchronized to '%s' container engine (PID %d) with ID '%s'",
-			w.Type(), w.PID(), w.ID(idctx))
+		slog.Info("successfully synchronized with container engine",
+			slog.String("type", w.Type()), slog.Int("pid", w.PID()),
+			slog.String("id", w.ID(idctx)))
 	}()
 	// Give the watcher a (short) chance to get in sync, but do not hang around
 	// for too long if the container engine is slow...
@@ -87,8 +89,8 @@ func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
 			<-wecker.C
 		}
 	case <-wecker.C:
-		log.Warnf("'%s' container engine (PID %d) not yet synchronized ... continuing in background",
-			w.Type(), w.PID())
+		slog.Warn("container engine not yet synchronized, continuing in background",
+			slog.String("type", w.Type()), slog.Int("pid", w.PID()))
 	}
 }
 
@@ -126,21 +128,21 @@ func activateAndStartWatch(
 
 		// attempt a time-boxed connect to the engine's API endpoint in order to
 		// determine the PID of the serving process.
-		log.Infof("activating '%s' container engine at API endpoint %s",
-			enginename, apipath)
+		slog.Info("activating container engine",
+			slog.String("name", enginename), slog.String("api", apipath))
 		started := time.Now()
 		var d net.Dialer
 		connectctx, connectcancel := context.WithTimeout(ctx, maxwait)
 		defer connectcancel()
 		conn, err := d.DialContext(connectctx, "unix", apipath)
 		if err != nil {
-			log.Errorf("cannot activate container engine at API %s, reason: %s",
-				apipath, err.Error())
+			slog.Error("cannot activate container engine",
+				slog.String("api", apipath), slog.String("err", err.Error()))
 			return
 		}
 		defer conn.Close()
-		log.Infof("activated '%s' container engine at API endpoint %s",
-			enginename, apipath)
+		slog.Info("successfully activated container engine",
+			slog.String("name", enginename), slog.String("api", apipath))
 
 		// next, try to find the newly activated engine process; unfortunately,
 		// the API socket's peer credential won't give us the engine's PID, but
@@ -156,8 +158,8 @@ func activateAndStartWatch(
 			sleep := time.NewTimer(findPolling)
 			select {
 			case <-sleep.C:
-				log.Infof("retrying to find activated '%s' container engine process for API endpoint %s",
-					enginename, apipath)
+				slog.Info("retrying to find activated container engine process",
+					slog.String("name", enginename), slog.String("api", apipath))
 			case <-ctx.Done():
 				if !sleep.Stop() {
 					<-sleep.C
@@ -168,11 +170,13 @@ func activateAndStartWatch(
 		if pid == 0 {
 			err = fmt.Errorf("cannot find activated container engine process '%s' for API endpoint %s",
 				enginename, apipath)
-			log.Errorf(err.Error())
+			slog.Error("cannot find activated container engine process",
+				slog.String("name", enginename), slog.String("api", apipath))
 			return
 		}
-		log.Infof("activated container engine process '%s' with API endpoint %s has PID %d",
-			enginename, apipath, pid)
+		slog.Info("found activated container engine process",
+			slog.String("name", enginename), slog.String("api", apipath),
+			slog.Int("pid", int(pid)))
 
 		// now attempt to create and start the watcher, also connected to the
 		// API endpoint.
@@ -203,6 +207,7 @@ func activateAndStartWatch(
 			<-wecker.C
 		}
 	case <-wecker.C:
-		log.Warnf("engine endpoint %s still in activation ... continuing in background", apipath)
+		slog.Warn("engine endpoint still in activation, continuing in background",
+			slog.String("api", apipath))
 	}
 }

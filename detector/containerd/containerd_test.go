@@ -7,11 +7,13 @@ package containerd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/containerd/containerd"
 	detect "github.com/siemens/turtlefinder/detector"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/morbyd"
 	"github.com/thediveo/morbyd/build"
@@ -122,8 +124,12 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 	})
 
 	It("tries unsuccessfully", NodeTimeout(30*time.Second), func(ctx context.Context) {
+		oldDefault := slog.Default()
+		defer slog.SetDefault(oldDefault)
+		slogout := testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 		d := &Detector{}
 		Expect(d.NewWatchers(ctx, 0, []string{"/etc/rumpelpumpel"})).To(BeEmpty())
+		Expect(slogout.String()).To(ContainSubstring("no working containerd API endpoint found"))
 	})
 
 	It("watches successfully", NodeTimeout(30*time.Second), func(ctx context.Context) {

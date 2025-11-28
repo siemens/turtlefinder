@@ -53,10 +53,11 @@ var _ = Describe("finding socket-activated demons", Serial, Ordered, func() {
 		netunix := Successful(os.Open("/proc/self/net/unix"))
 		defer netunix.Close()
 		var udsino uint64
+
 		scanner := bufio.NewScanner(netunix)
 		for scanner.Scan() {
 			line := scanner.Text()
-			if !strings.HasSuffix(line, " /run/docker.sock") {
+			if !strings.HasSuffix(line, " /run/docker.sock") && !strings.HasSuffix(line, "/var/run/docker.sock") {
 				continue
 			}
 			fields := strings.Fields(line)

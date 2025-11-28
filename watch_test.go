@@ -120,7 +120,7 @@ var _ = Describe("watch", Serial, func() {
 			scanner := bufio.NewScanner(netunix)
 			for scanner.Scan() {
 				line := scanner.Text()
-				if !strings.HasSuffix(line, " /run/docker.sock") {
+				if !strings.HasSuffix(line, " /run/docker.sock") && !strings.HasSuffix(line, " /var/run/docker.sock") {
 					continue
 				}
 				fields := strings.Fields(line)

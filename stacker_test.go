@@ -94,10 +94,10 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
 			Should(ContainElements(
-				HaveEngine(moby.Type, `^unix:///proc/\d+/root/run/docker.sock$`),
+				HaveEngine(moby.Type, `^unix:///proc/\d+/root/(?:var/)?run/docker.sock$`),
 				// In a Docker Desktop on WSL2 configuration, Docker runs inside a
 				// containerd, and there's also Docker's containerd sidekick...
-				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/containerd/containerd.sock$`),
+				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/(?:docker/)?containerd/containerd.sock$`),
 			))
 
 		By("creating a new Docker session for testing")

@@ -326,7 +326,7 @@ func (f *TurtleFinder) update(ctx context.Context, procs model.ProcessTable) {
 // synchronization time box, the referenced wait group will be decreased
 // automatically. This ensures that waiting on the wait group will always be
 // time-boxed.
-func (f *TurtleFinder) updateDaemons(ctx context.Context, procs model.ProcessTable, wg *sync.WaitGroup) {
+func (f *TurtleFinder) updateDaemons(_ context.Context, procs model.ProcessTable, wg *sync.WaitGroup) {
 	// Look for potential signs of engine life, based on process names...
 	engineprocs := []engineProcess{}
 NextProcess:

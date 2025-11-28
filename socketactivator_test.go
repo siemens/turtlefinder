@@ -53,6 +53,9 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		if os.Getuid() != 0 {
 			Skip("needs root")
 		}
+		if string(Successful(os.ReadFile("/proc/1/comm"))) == "docker-init\n" {
+			Skip("needs systemd as PID 1")
+		}
 
 		By("using PID 1 systemd as an already-present socket activator")
 		ctx, cancel := context.WithCancel(ctx)
@@ -69,7 +72,7 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		Expect(hash).NotTo(BeZero())
 		newapis := s.discoverAPIPaths(rawsox, hash)
 		Expect(s.hash).To(Equal(hash))
-		Expect(newapis).To(ContainElement("/run/docker.sock"))
+		Expect(newapis).To(ContainElement(MatchRegexp("^/(?:var/)?run/docker.sock$")))
 
 		Expect(s.discoverAPIPaths(rawsox, hash)).To(BeNil(), "unexpected/invalid state change")
 
@@ -103,6 +106,9 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 	It("discovers and watches socket-activatable engines", func(ctx context.Context) {
 		if os.Getuid() != 0 {
 			Skip("needs root")
+		}
+		if string(Successful(os.ReadFile("/proc/1/comm"))) == "docker-init\n" {
+			Skip("needs systemd as PID 1")
 		}
 
 		By("using PID 1 systemd as an already-present socket activator")

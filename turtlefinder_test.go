@@ -42,7 +42,7 @@ const (
 	canaryContainerName = "canary"
 	canaryImageRef      = "docker.io/library/busybox:latest"
 
-	spinupTimeout = 10 * time.Second
+	spinupTimeout = 30 * time.Second
 	spinupPolling = 500 * time.Millisecond
 )
 
@@ -155,9 +155,9 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 	// tag :D
 	//
 	// In order to avoid all the "nice" problems with installing podman distro
-	// packages side-by-side into the host, just to find out that the way the
-	// distro packagers made it destroys the docker installation, we run a
-	// podman demon ("don't call ..." *plonk* ) inside a Docker container, as a
+	// packages side-by-side into the host, just to find out that the distro
+	// packagers destroy any existing docker installation, we run a podman demon
+	// ("don't call ..." *plonk* ) inside a Docker container, as a
 	// socket-activated service. And we create a podman workload inside that
 	// container in the insane hope of discovering it. Ah, so many demons...
 	It("finds docker, containerd, and podman-in-docker", func(ctx context.Context) {
@@ -184,7 +184,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 		}).Within(spinupTimeout).ProbeEvery(spinupPolling).
 			Should(ContainElements(
 				HaveEngine(moby.Type, `^unix:///proc/\d+/root/run/docker.sock$`),
-				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/containerd/containerd.sock$`),
+				HaveEngine(containerd.Type, `^unix:///proc/\d+/root/run/(?:docker/)?containerd/containerd.sock$`),
 				HaveEngine(podman.Type, `^unix:///proc/\d+/root/run/podman/podman.sock$`),
 			))
 

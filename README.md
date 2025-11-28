@@ -6,11 +6,11 @@
 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/siemens/turtlefinder)](https://pkg.go.dev/github.com/siemens/turtlefinder)
 [![GitHub](https://img.shields.io/github/license/siemens/turtlefinder)](https://img.shields.io/github/license/siemens/turtlefinder)
-![build and test](https://github.com/siemens/turtlefinder/workflows/build%20and%20test/badge.svg?branch=main)
+![build and test](https://github.com/siemens/turtlefinder/actions/workflows/buildandtest.yaml/badge.svg?branch=main)
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
 [![Go Report Card](https://goreportcard.com/badge/github.com/siemens/turtlefinder)](https://goreportcard.com/report/github.com/siemens/turtlefinder)
-![Coverage](https://img.shields.io/badge/Coverage-87.4%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-82.8%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
@@ -115,44 +115,20 @@ another container engine: that is, the hierarchy of container engines. This is
 especially useful for such system configurations as KinD clusters and Docker
 Desktop on WSL2.
 
-## VSCode Tasks
+## DevContainer
 
-The included `turtlefinder.code-workspace` defines the following tasks:
+Do yourself a favor, tinker with this Go module in a devcontainer; this gives
+you a controlled and somewhat isolated environment.
 
-- **View Go module documentation** task: installs `pkgsite`, if not done already
-  so, then starts `pkgsite` and opens VSCode's integrated ("simple") browser to
-  show the csharg documentation.
+> [!CAUTION]
+>
+> Do **not** use VSCode's "~~Dev Containers: Clone Repository in Container
+> Volume~~" command, as it is utterly broken by design, ignoring
+> `.devcontainer/devcontainer.json`.
 
-#### Aux Tasks
-
-- _pksite service_: auxilliary task to run `pkgsite` as a background service
-  using `scripts/pkgsite.sh`. The script leverages browser-sync and nodemon to
-  hot reload the Go module documentation on changes; many thanks to @mdaverde's
-  [_Build your Golang package docs
-  locally_](https://mdaverde.com/posts/golang-local-docs) for paving the way.
-  `scripts/pkgsite.sh` adds automatic installation of `pkgsite`, as well as the
-  `browser-sync` and `nodemon` npm packages for the local user.
-- _view pkgsite_: auxilliary task to open the VSCode-integrated "simple" browser
-  and pass it the local URL to open in order to show the module documentation
-  rendered by `pkgsite`. This requires a detour via a task input with ID
-  "_pkgsite_".
-
-## Make Targets
-
-- `make`: lists all targets.
-- `make test`: runs all tests – please note that this strictly requires a
-  genuine Docker (moby) container demon to be present. Trying to substitute a
-  `dockerd` with `podman` will make tests fail for good reason, as podman isn't
-  Docker for our purposes.
-- `make pkgsite`: installs [`x/pkgsite`](golang.org/x/pkgsite/cmd/pkgsite), as
-  well as the [`browser-sync`](https://www.npmjs.com/package/browser-sync) and
-  [`nodemon`](https://www.npmjs.com/package/nodemon) npm packages first, if not
-  already done so. Then runs the `pkgsite` and hot reloads it whenever the
-  documentation changes.
-- `make report`: installs
-  [`@gojp/goreportcard`](https://github.com/gojp/goreportcard) if not yet done
-  so and then runs it on the code base.
-- `make vuln`: install (or updates) govuln and then checks the Go sources.
+1. `git clone https://github.com/siemens/turtlefinder`
+2. in VSCode: Ctrl+Shift+P, "Dev Containers: Open Workspace in Container..."
+3. select `turtlefinder.code-workspace` and off you go...
 
 # Contributing
 
@@ -160,6 +136,6 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License and Copyright
 
-(c) Siemens AG 2023‒24
+(c) Siemens AG 2023‒25
 
 [SPDX-License-Identifier: MIT](LICENSE)

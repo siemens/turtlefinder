@@ -123,7 +123,11 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 		})
 	})
 
-	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
 
 	It("it finds and updates socket activators", func(ctx context.Context) {
 		By("setting up a socket activator object for our systemd PID 1")

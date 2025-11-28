@@ -63,6 +63,6 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		}
 		slog.Debug("Docker API endpoint", slog.String("api", apipathname), slog.String("err", err.Error()))
 	}
-	slog.Error("no working Docker API endpoint found.")
+	slog.Error("no working Docker API endpoint found")
 	return nil
 }

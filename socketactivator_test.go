@@ -33,7 +33,11 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 
 	BeforeAll(dockerEngineFinderOnly)
 
-	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
 
 	BeforeEach(clearCachedDetectorPlugins)
 

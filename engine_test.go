@@ -47,7 +47,11 @@ var _ = Describe("container engine", Serial, Ordered, func() {
 		})
 	})
 
-	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
 
 	It("tracks an engine", NodeTimeout(30*time.Second), func(ctx context.Context) {
 		w, err := moby.New("", nil)

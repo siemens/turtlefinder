@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	kindischName = "turtlefinder-containerd"
+	kindischName = "turtlefinder-stacker"
 
 	testNamespace     = "testing"
 	testContainerName = "canary"
@@ -56,7 +56,11 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		})
 	})
 
-	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
 
 	It("prefixes and stacks turtles and elephants", NodeTimeout(60*time.Second), func(ctx context.Context) {
 		if os.Getuid() != 0 {
@@ -154,8 +158,10 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			})
 			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
-			Should(HaveExactElements(
-				HaveField("Type", containerd.Type),
+			// running this inside a host with devcontainers and
+			// dockers-in-docker and inside the host PID namespace will usually
+			// turn up much more than we bargained for, so no exact match here.
+			Should(ContainElements(
 				HaveField("Type", containerd.Type),
 				HaveField("Type", moby.Type),
 				HaveField("Type", cri.Type),

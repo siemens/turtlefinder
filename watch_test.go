@@ -41,7 +41,11 @@ var _ = Describe("watch", Serial, func() {
 
 	var slogout fmt.Stringer
 
-	BeforeEach(func() { slogout = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
+	BeforeEach(func() {
+		oldDefault := slog.Default()
+		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		slogout = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
 
 	Context("connecting to a known engine process and starting a watch", func() {
 

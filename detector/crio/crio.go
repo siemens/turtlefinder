@@ -58,6 +58,6 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		}
 		w.Close()
 	}
-	slog.Error("no working CRI-O API endpoint found.")
+	slog.Error("no working CRI-O API endpoint found")
 	return nil
 }

@@ -6,11 +6,12 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/siemens/turtlefinder/internal/test"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/whalewatcher/watcher"
 
@@ -32,7 +33,7 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 
 	BeforeAll(dockerEngineFinderOnly)
 
-	BeforeEach(test.LogToGinkgo)
+	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
 
 	BeforeEach(clearCachedDetectorPlugins)
 

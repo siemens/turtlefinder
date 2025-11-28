@@ -7,12 +7,13 @@ package turtlefinder
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/siemens/turtlefinder/activator/podman"
-	"github.com/siemens/turtlefinder/internal/test"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/siemens/turtlefinder/matcher"
 	"github.com/thediveo/lxkns/discover"
 	"github.com/thediveo/lxkns/model"
@@ -112,8 +113,6 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 
 	BeforeEach(clearCachedDetectorPlugins)
 
-	BeforeEach(test.LogToGinkgo)
-
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
@@ -123,6 +122,8 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
 	})
+
+	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
 
 	It("it finds and updates socket activators", func(ctx context.Context) {
 		By("setting up a socket activator object for our systemd PID 1")

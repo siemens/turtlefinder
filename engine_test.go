@@ -6,6 +6,7 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/onsi/gomega/types"
@@ -15,11 +16,10 @@ import (
 	"github.com/thediveo/morbyd/timestamper"
 	"github.com/thediveo/whalewatcher/watcher/moby"
 
-	"github.com/siemens/turtlefinder/internal/test"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	. "github.com/siemens/turtlefinder/matcher"
 	. "github.com/thediveo/fdooze"
 	. "github.com/thediveo/success"
@@ -37,8 +37,6 @@ func HaveEngine(typ string, apiregex string) types.GomegaMatcher {
 
 var _ = Describe("container engine", Serial, Ordered, func() {
 
-	BeforeEach(test.LogToGinkgo)
-
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
@@ -48,6 +46,8 @@ var _ = Describe("container engine", Serial, Ordered, func() {
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
 	})
+
+	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
 
 	It("tracks an engine", NodeTimeout(30*time.Second), func(ctx context.Context) {
 		w, err := moby.New("", nil)

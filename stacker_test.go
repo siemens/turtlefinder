@@ -6,6 +6,7 @@ package turtlefinder
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -26,11 +27,10 @@ import (
 	"github.com/thediveo/whalewatcher/watcher/moby"
 	"golang.org/x/exp/slices"
 
-	testlog "github.com/siemens/turtlefinder/internal/test"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
+	"github.com/siemens/turtlefinder/internal/testslog"
 	. "github.com/siemens/turtlefinder/matcher"
 	. "github.com/thediveo/fdooze"
 	. "github.com/thediveo/success"
@@ -46,8 +46,6 @@ const (
 
 var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 
-	BeforeEach(testlog.LogToGinkgo)
-
 	BeforeEach(func() {
 		goodfds := Filedescriptors()
 		goodgos := Goroutines() // avoid other failed goroutine tests to spill over
@@ -57,6 +55,8 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			Expect(Filedescriptors()).NotTo(HaveLeakedFds(goodfds))
 		})
 	})
+
+	BeforeEach(func() { _ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter) })
 
 	It("prefixes and stacks turtles and elephants", NodeTimeout(60*time.Second), func(ctx context.Context) {
 		if os.Getuid() != 0 {

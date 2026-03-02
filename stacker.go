@@ -42,10 +42,21 @@ func (e *stackedEngine) Add(child *stackedEngine) {
 // managed by another container engine.
 func stackEngines(containers []*model.Container, engines []*Engine, proctable model.ProcessTable) {
 	// Let's build an index for mapping the PIDs of the containers' initial
-	// processes to their containers.
+	// (shim) processes to their containers. The reason we don't use the PIDs of
+	// the container's initial processes is that in some configurations, such as
+	// with the devcontainer Docker-in-Docker feature, we end up with the demon
+	// process being a direct child of the container shim, not of the process.
 	containersByPID := map[model.PIDType]*model.Container{}
 	for _, container := range containers {
-		containersByPID[container.PID] = container
+		pid := container.PID
+		if proc := proctable[pid]; proc != nil && proc.Parent != nil {
+			pid = proc.Parent.PID // take the shim instead
+		}
+		containersByPID[pid] = container
+		// slog.Warn("turtlefinder",
+		// 	slog.String("container-name", container.Name),
+		// 	slog.Int("container-pid", int(container.PID)),
+		// 	slog.Int("pid", int(pid)))
 	}
 	// Index the list of engines we were told, in order to quickly look up the
 	// additional information we need to associate with the engines during the
@@ -82,6 +93,9 @@ func stackEngines(containers []*model.Container, engines []*Engine, proctable mo
 		proc.Parent = proctable[proc.PPID]
 	}
 	for _, engine := range engines {
+		// slog.Warn("turtlefinder engine stacking",
+		// 	slog.String("engine", engine.Type()),
+		// 	slog.Int("engine-pid", engine.PID()))
 		// Climb up the process tree until we either hit a container PID or we
 		// fall off the ... root? Okay, another +1 on the eternal counter of
 		// really bad metaphors.
@@ -92,6 +106,9 @@ func stackEngines(containers []*model.Container, engines []*Engine, proctable mo
 		)
 		proc := proctable[model.PIDType(engine.PID())]
 		for proc != nil {
+			// slog.Warn("turtlefinder checking process",
+			// 	slog.String("name", proc.Name),
+			// 	slog.Int("pid", int(proc.PID)))
 			var ok bool
 			if container, ok = containersByPID[proc.PID]; ok {
 				name = container.Name
@@ -101,6 +118,11 @@ func stackEngines(containers []*model.Container, engines []*Engine, proctable mo
 			// rinse and repeat until container PID hit or falling off root.
 			proc = proc.Parent
 		}
+		// slog.Warn("turtlefinder stacking",
+		// 	slog.String("engine", engine.Type()),
+		// 	slog.Int("engine-pid", engine.PID()),
+		// 	slog.String("parent-engine", engine.Type()),
+		// 	slog.Int("parent-engine-pid", int(outerEnginePID)))
 		stackedEngines[model.PIDType(engine.PID())] = &stackedEngine{
 			EncloserName:      name,
 			EncloserEnginePID: outerEnginePID,

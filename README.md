@@ -10,7 +10,7 @@
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
 [![Go Report Card](https://goreportcard.com/badge/github.com/siemens/turtlefinder)](https://goreportcard.com/report/github.com/siemens/turtlefinder)
-![Coverage](https://img.shields.io/badge/Coverage-82.8%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-87.7%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
@@ -26,7 +26,7 @@ It supports the following container engines:
 - Docker
 - containerd (both native API as well as CRI Event PLEG API)
 - CRI-O (CRI Event PLEG API)
-- podman (via Docker-compatible API only)
+- podman (only when socket-activated and via Docker-compatible API)
 
 The `turtlefinder` package originates from
 [Ghostwire](https://github.com/siemens/ghostwire) (part of the Edgeshark
@@ -112,8 +112,8 @@ process anymore after a more recent process tree scan.
 Furthermore, we do some fancy things during workload discovery in order to
 figure out how container engines might have been stuck into containers of
 another container engine: that is, the hierarchy of container engines. This is
-especially useful for such system configurations as KinD clusters and Docker
-Desktop on WSL2.
+especially useful for such system configurations as KinD clusters and
+Development Containers with Docker-in-Docker.
 
 ## DevContainer
 
@@ -128,7 +128,9 @@ you a controlled and somewhat isolated environment.
 
 1. `git clone https://github.com/siemens/turtlefinder`
 2. in VSCode: Ctrl+Shift+P, "Dev Containers: Open Workspace in Container..."
-3. select `turtlefinder.code-workspace` and off you go...
+3. select `turtlefinder.code-workspace`,
+4. then select the (default) "turtlefinder (docker-in-docker)" configuration,
+   and off you go...
 
 # Contributing
 
@@ -136,6 +138,6 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License and Copyright
 
-(c) Siemens AG 2023‒25
+(c) Siemens AG 2023‒26
 
 [SPDX-License-Identifier: MIT](LICENSE)

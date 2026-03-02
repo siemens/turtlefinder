@@ -1,0 +1,47 @@
+{
+    "name": "turtlefinder with lxkns (docker-in-docker)",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "version": "latest",
+            "moby": false // go for the upstream Docker-CE
+        },
+        "ghcr.io/thediveo/devcontainer-features/goreportcard:0": {},
+        "ghcr.io/thediveo/devcontainer-features/go-mod-upgrade:0": {},
+        "ghcr.io/thediveo/devcontainer-features/gocover:0": {
+            "tags": "matchers",
+            "root": true,
+            "num-programs": "1",
+            "race": true,
+            "verbose": true,
+            "html": true
+        }
+    },
+    "workspaceFolder": "/workspaces/turtlefinder",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/turtlefinder,type=bind,consistency=cached",
+    "mounts": [
+        "source=${localWorkspaceFolder}/../lxkns,target=/workspaces/lxkns,type=bind,consistency=cached"
+    ],
+    "runArgs": [
+        "--pid=host",
+        "--cgroupns=host"
+    ],
+    "remoteEnv": {
+        "GOPATH": "/home/vscode/go",
+        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${localEnv:PATH}"
+    },
+    "postCreateCommand": {
+        "go-and-mock-yourself": "go install go.uber.org/mock/mockgen@latest",
+        "setup Go workspace": "sudo chown vscode:vscode /workspaces && cd /workspaces && go work init lxkns turtlefinder"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "stkb.rewrap",
+                "brunnerh.insert-unicode",
+                "mhutchie.git-graph",
+                "ms-vscode.makefile-tools"
+            ]
+        }
+    }
+}

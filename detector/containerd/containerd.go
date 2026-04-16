@@ -14,7 +14,7 @@ import (
 	detect "github.com/siemens/turtlefinder/detector"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	cdclient "github.com/containerd/containerd"
+	"github.com/containerd/containerd/v2/client"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
 	cdengine "github.com/thediveo/whalewatcher/engineclient/containerd"
@@ -69,7 +69,7 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 			continue
 		}
 		versionctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		_, err = w.Client().(*cdclient.Client).Version(versionctx)
+		_, err = w.Client().(*client.Client).Version(versionctx)
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			cancel()
 			slog.Debug("containerd API Info call context hit deadline",

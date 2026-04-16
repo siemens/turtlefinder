@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/v2/client"
 	detect "github.com/siemens/turtlefinder/detector"
 	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/thediveo/go-plugger/v3"
@@ -107,11 +107,11 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 		// properly resolved.
 		endpointPath := fmt.Sprintf("/proc/%d/root%s",
 			pid, "/run/containerd/containerd.sock")
-		var cdclient *containerd.Client
+		var cdclient *client.Client
 		Eventually(func() error {
 			var err error
-			cdclient, err = containerd.New(endpointPath,
-				containerd.WithTimeout(5*time.Second))
+			cdclient, err = client.New(endpointPath,
+				client.WithTimeout(5*time.Second))
 			return err
 		}).Within(30*time.Second).ProbeEvery(1*time.Second).
 			Should(Succeed(), "containerd API never became responsive")

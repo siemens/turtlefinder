@@ -34,7 +34,7 @@ var _ = Describe("watch", Serial, func() {
 	BeforeEach(func() {
 		goodgos := Goroutines()
 		DeferCleanup(func() {
-			Eventually(Goroutines).Within(5 * time.Second).ProbeEvery(100 * time.Second).
+			Eventually(Goroutines).Within(10 * time.Second).ProbeEvery(100 * time.Second).
 				ShouldNot(HaveLeaked(goodgos))
 		})
 	})

@@ -8,7 +8,7 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/thediveo/morbyd/safe"
+	"github.com/thediveo/safe"
 )
 
 // SetDefault creates and sets a new default slog.Logger, returning a

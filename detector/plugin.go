@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/thediveo/lxkns/model"
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
 // Detector allows specialized container engine detector plugins to interface

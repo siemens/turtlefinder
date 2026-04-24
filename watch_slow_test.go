@@ -7,7 +7,7 @@ package turtlefinder
 import (
 	"time"
 
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
 type slowWatcher struct {

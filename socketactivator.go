@@ -18,7 +18,7 @@ import (
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/procfsroot"
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
 // socketActivatorProcess keeps track of the socket activation configuration and

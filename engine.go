@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/thediveo/lxkns/model"
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
 // Engine watches a single container engine process for signs of container

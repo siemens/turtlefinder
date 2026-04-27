@@ -8,6 +8,8 @@ on:
     branches:
       - main
       - develop
+permissions:
+  contents: read
 
 jobs:
 

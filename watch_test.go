@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/siemens/turtlefinder/internal/testslog"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
 	"github.com/thediveo/lxkns/model"
 	engineclient "github.com/thediveo/whalewatcher/v2/engineclient/moby"
 	"github.com/thediveo/whalewatcher/v2/watcher"

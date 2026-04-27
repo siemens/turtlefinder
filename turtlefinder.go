@@ -14,12 +14,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/siemens/turtlefinder/activator"
-	"github.com/siemens/turtlefinder/detector"
+	"github.com/siemens/turtlefinder/v2/activator"
+	"github.com/siemens/turtlefinder/v2/detector"
 	"golang.org/x/sync/semaphore"
 
-	_ "github.com/siemens/turtlefinder/activator/all" // pull in activator and socket-activated engine detector plugins
-	_ "github.com/siemens/turtlefinder/detector/all"  // pull in engine detector plugins
+	_ "github.com/siemens/turtlefinder/v2/activator/all" // pull in activator and socket-activated engine detector plugins
+	_ "github.com/siemens/turtlefinder/v2/detector/all"  // pull in engine detector plugins
 
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/containerizer"

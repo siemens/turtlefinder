@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	detect "github.com/siemens/turtlefinder/detector"
-	"github.com/siemens/turtlefinder/internal/testslog"
+	detect "github.com/siemens/turtlefinder/v2/detector"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/morbyd/v2"

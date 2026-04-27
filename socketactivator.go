@@ -14,7 +14,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/siemens/turtlefinder/activator"
+	"github.com/siemens/turtlefinder/v2/activator"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/procfsroot"

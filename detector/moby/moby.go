@@ -10,14 +10,14 @@ import (
 	"sort"
 	"time"
 
-	detect "github.com/siemens/turtlefinder/detector"
-
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
-	mobyengine "github.com/thediveo/whalewatcher/engineclient/moby"
-	"github.com/thediveo/whalewatcher/watcher"
-	"github.com/thediveo/whalewatcher/watcher/moby"
+	mobyengine "github.com/thediveo/whalewatcher/v2/engineclient/moby"
+	"github.com/thediveo/whalewatcher/v2/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher/moby"
+
+	detect "github.com/siemens/turtlefinder/detector"
 )
 
 // Register this Docker container (engine) discovery plugin. This statically
@@ -51,7 +51,7 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		w, err := moby.New("unix://"+apipathname, nil, mobyengine.WithPID(int(pid)))
 		if err == nil {
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			_, err = w.Client().(*client.Client).Info(ctx)
+			_, err = w.Client().(*client.Client).Info(ctx, client.InfoOptions{})
 			if ctxerr := ctx.Err(); ctxerr != nil {
 				slog.Debug("Docker API Info call context hit deadline", slog.String("err", ctxerr.Error()))
 			}

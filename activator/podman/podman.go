@@ -9,13 +9,14 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/docker/docker/client" // priceless
-	"github.com/siemens/turtlefinder/activator"
+	"github.com/moby/moby/client" // priceless
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
-	mobyengine "github.com/thediveo/whalewatcher/engineclient/moby"
-	"github.com/thediveo/whalewatcher/watcher"
-	"github.com/thediveo/whalewatcher/watcher/moby"
+	mobyengine "github.com/thediveo/whalewatcher/v2/engineclient/moby"
+	"github.com/thediveo/whalewatcher/v2/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher/moby"
+
+	"github.com/siemens/turtlefinder/activator"
 )
 
 // Type identifying podman workloads and as returned by Watcher.Type().
@@ -72,7 +73,7 @@ func (e *Engine) NewWatcher(ctx context.Context, pid model.PIDType, api string) 
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	_, err = w.Client().(*client.Client).Info(ctx)
+	_, err = w.Client().(*client.Client).Info(ctx, client.InfoOptions{})
 	if ctxerr := ctx.Err(); ctxerr != nil {
 		err = ctxerr
 		slog.Debug("Docker API Info call context hit deadline",

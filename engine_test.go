@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/onsi/gomega/types"
-	"github.com/thediveo/morbyd"
-	"github.com/thediveo/morbyd/run"
-	"github.com/thediveo/morbyd/session"
-	"github.com/thediveo/morbyd/timestamper"
-	"github.com/thediveo/whalewatcher/watcher/moby"
+	"github.com/thediveo/morbyd/v2"
+	"github.com/thediveo/morbyd/v2/run"
+	"github.com/thediveo/morbyd/v2/session"
+	"github.com/thediveo/morbyd/v2/timestamper"
+	"github.com/thediveo/whalewatcher/v2/watcher/moby"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

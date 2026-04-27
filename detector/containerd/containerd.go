@@ -17,11 +17,11 @@ import (
 	"github.com/containerd/containerd/v2/client"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
-	cdengine "github.com/thediveo/whalewatcher/engineclient/containerd"
-	criengine "github.com/thediveo/whalewatcher/engineclient/cri"
-	"github.com/thediveo/whalewatcher/watcher"
-	"github.com/thediveo/whalewatcher/watcher/containerd"
-	"github.com/thediveo/whalewatcher/watcher/cri"
+	cdengine "github.com/thediveo/whalewatcher/v2/engineclient/containerd"
+	criengine "github.com/thediveo/whalewatcher/v2/engineclient/cri"
+	"github.com/thediveo/whalewatcher/v2/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
+	"github.com/thediveo/whalewatcher/v2/watcher/cri"
 )
 
 // Register this containerd container (engine) discovery plugin. This statically

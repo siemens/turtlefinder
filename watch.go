@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/thediveo/lxkns/model"
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
 const (

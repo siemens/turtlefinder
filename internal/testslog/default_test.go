@@ -7,7 +7,7 @@ package testslog
 import (
 	"log/slog"
 
-	"github.com/thediveo/morbyd/safe"
+	"github.com/thediveo/safe"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

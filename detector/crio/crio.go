@@ -14,9 +14,9 @@ import (
 
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
-	criengine "github.com/thediveo/whalewatcher/engineclient/cri"
-	"github.com/thediveo/whalewatcher/watcher"
-	"github.com/thediveo/whalewatcher/watcher/cri"
+	criengine "github.com/thediveo/whalewatcher/v2/engineclient/cri"
+	"github.com/thediveo/whalewatcher/v2/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher/cri"
 )
 
 // Register this CRI-O container (engine) discovery plugin. This statically

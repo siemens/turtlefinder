@@ -13,7 +13,7 @@ import (
 
 	"github.com/siemens/turtlefinder/internal/testslog"
 	"github.com/thediveo/lxkns/model"
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

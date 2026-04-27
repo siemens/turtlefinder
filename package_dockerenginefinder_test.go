@@ -8,13 +8,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/docker/docker/client"
-	"github.com/siemens/turtlefinder/activator"
+	"github.com/moby/moby/client"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
-	mobyengine "github.com/thediveo/whalewatcher/engineclient/moby"
-	"github.com/thediveo/whalewatcher/watcher"
-	"github.com/thediveo/whalewatcher/watcher/moby"
+	mobyengine "github.com/thediveo/whalewatcher/v2/engineclient/moby"
+	"github.com/thediveo/whalewatcher/v2/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher/moby"
+
+	"github.com/siemens/turtlefinder/activator"
 
 	. "github.com/onsi/ginkgo/v2"
 )
@@ -64,7 +65,7 @@ func (e *dockerdEngineFinder) NewWatcher(ctx context.Context, pid model.PIDType,
 	}
 	ctx, cancel := context.WithTimeout(ctx, dockerInfoTimeout)
 	defer cancel()
-	_, err = w.Client().(*client.Client).Info(ctx)
+	_, err = w.Client().(*client.Client).Info(ctx, client.InfoOptions{})
 	if ctxerr := ctx.Err(); ctxerr != nil {
 		err = ctxerr
 		return nil

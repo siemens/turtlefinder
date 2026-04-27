@@ -25,7 +25,7 @@ import (
 	"github.com/thediveo/lxkns/containerizer"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/procfsroot"
-	"github.com/thediveo/whalewatcher/watcher"
+	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
 // Overseer gives access to information about container engines currently

@@ -31,7 +31,6 @@
         "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${localEnv:PATH}"
     },
     "postCreateCommand": {
-        "go-and-mock-yourself": "go install go.uber.org/mock/mockgen@latest",
         "setup Go workspace": "sudo chown vscode:vscode /workspaces && cd /workspaces && go work init lxkns turtlefinder"
     },
     "customizations": {

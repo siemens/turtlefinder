@@ -1,0 +1,51 @@
+{
+    "name": "turtlefinder (systemd and docker-in-docker)",
+    "portsAttributes": {
+        "6060": {
+            "label": "turtlefinder package documentation",
+            "onAutoForward": "notify",
+            "protocol": "http"
+        }
+    },
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    // IMPORTANT: overrideCommand and init only work in this case as long as we
+    // don't install any devcontainer feature. Otherwise, vscode will break the
+    // setup as it tries to start systemd as a PID other than 1.
+    "overrideCommand": false,
+    "init": false,
+    "privileged": true,
+    "runArgs": [
+        "--cgroupns=host", // needed for ./detector/containerd unit tests
+        "--tmpfs=/run",
+        "--tmpfs=/run/lock"
+    ],
+    "mounts": [
+        "source=/sys/fs/cgroup,target=/sys/fs/cgroup,type=bind",
+        {
+            "source": "dind-var-lib-docker-${devcontainerId}",
+            "target": "/var/lib/docker",
+            "type": "volume"
+        },
+        {
+            "source": "dind-var-lib-containerd-${devcontainerId}",
+            "target": "/var/lib/containerd",
+            "type": "volume"
+        }
+    ],
+    "remoteEnv": {
+        "GOPATH": "/home/vscode/go",
+        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${localEnv:PATH}"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "stkb.rewrap",
+                "brunnerh.insert-unicode",
+                "mhutchie.git-graph",
+                "ms-vscode.makefile-tools"
+            ]
+        }
+    }
+}

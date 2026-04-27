@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siemens/turtlefinder/activator/podman"
-	"github.com/siemens/turtlefinder/internal/testslog"
-	"github.com/siemens/turtlefinder/matcher"
+	"github.com/siemens/turtlefinder/v2/activator/podman"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
+	"github.com/siemens/turtlefinder/v2/matcher"
 	"github.com/thediveo/lxkns/discover"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/morbyd/v2"

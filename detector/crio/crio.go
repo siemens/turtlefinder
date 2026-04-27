@@ -10,7 +10,7 @@ import (
 	"sort"
 	"time"
 
-	detect "github.com/siemens/turtlefinder/detector"
+	detect "github.com/siemens/turtlefinder/v2/detector"
 
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"

@@ -17,7 +17,7 @@ import (
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
 
-	detect "github.com/siemens/turtlefinder/detector"
+	detect "github.com/siemens/turtlefinder/v2/detector"
 )
 
 // Register this Docker container (engine) discovery plugin. This statically

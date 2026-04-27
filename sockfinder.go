@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/siemens/turtlefinder/unsorted"
+	"github.com/siemens/turtlefinder/v2/unsorted"
 	"github.com/thediveo/lxkns/model"
 )
 

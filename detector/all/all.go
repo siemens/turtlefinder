@@ -5,7 +5,7 @@
 package all
 
 import (
-	_ "github.com/siemens/turtlefinder/detector/containerd" // detect containerd
-	_ "github.com/siemens/turtlefinder/detector/crio"       // detect cri-o
-	_ "github.com/siemens/turtlefinder/detector/moby"       // detect Docker
+	_ "github.com/siemens/turtlefinder/v2/detector/containerd" // detect containerd
+	_ "github.com/siemens/turtlefinder/v2/detector/crio"       // detect cri-o
+	_ "github.com/siemens/turtlefinder/v2/detector/moby"       // detect Docker
 )

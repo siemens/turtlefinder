@@ -10,12 +10,12 @@
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
 [![Go Report Card](https://goreportcard.com/badge/github.com/siemens/turtlefinder)](https://goreportcard.com/report/github.com/siemens/turtlefinder)
-![Coverage](https://img.shields.io/badge/Coverage-87.9%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-87.6%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
-`turtlefinder` is a Go module that discovers various container engines in a
+`turtlefinder/v2` is a Go module that discovers various container engines in a
 Linux host, including container engines that have been put into containers. If
 you consider such configurations to be rarer than rare, then please take a look
 at KinD ([Kubernetes-in-Docker](https://kind.sigs.k8s.io/)) as well as Docker
@@ -23,15 +23,20 @@ Desktop on WSL2 ([Windows Subsystem for
 Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)).
 
 It supports the following container engines:
-- Docker
+- Docker/Moby
 - containerd (both native API as well as CRI Event PLEG API)
 - CRI-O (CRI Event PLEG API)
 - podman (only when socket-activated and via Docker-compatible API)
 
-The `turtlefinder` package originates from
+The `turtlefinder/v2` package originates from
 [Ghostwire](https://github.com/siemens/ghostwire) (part of the Edgeshark
 project) and has been carved out in order to foster easy reuse in other projects
 without the need for importing the full Ghostwire module.
+
+## v2
+
+`turtlefinder/v2` has no API changes, but now depends on the
+`github.com/moby/moby/client` instead of the Docker SDK.
 
 ## Usage: One to ~~Bind~~ Find Them All
 

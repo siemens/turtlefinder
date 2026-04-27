@@ -16,7 +16,7 @@ import (
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
 
-	"github.com/siemens/turtlefinder/activator"
+	"github.com/siemens/turtlefinder/v2/activator"
 )
 
 // Type identifying podman workloads and as returned by Watcher.Type().

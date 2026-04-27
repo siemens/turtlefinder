@@ -5,7 +5,7 @@
 package systemd
 
 import (
-	"github.com/siemens/turtlefinder/activator"
+	"github.com/siemens/turtlefinder/v2/activator"
 	"github.com/thediveo/go-plugger/v3"
 )
 

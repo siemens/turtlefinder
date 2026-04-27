@@ -190,6 +190,8 @@ github.com/morikuni/aec v1.1.0 h1:vBBl0pUnvi/Je71dsRrhMBtreIqNMYErSAbEeb8jrXQ=
 github.com/morikuni/aec v1.1.0/go.mod h1:xDRgiq/iw5l+zkao76YTKzKttOp2cwPEne25HDkJnBw=
 github.com/onsi/ginkgo/v2 v2.28.1 h1:S4hj+HbZp40fNKuLUQOYLDgZLwNUVn19N3Atb98NCyI=
 github.com/onsi/ginkgo/v2 v2.28.1/go.mod h1:CLtbVInNckU3/+gC8LzkGUb9oF+e8W8TdUsxPwvdOgE=
+github.com/onsi/ginkgo/v2 v2.28.2 h1:DTrMfpqxiNUyQ3Y0zhn1n3cOO2euFgQPYIpkWwxVFps=
+github.com/onsi/ginkgo/v2 v2.28.2/go.mod h1:CLtbVInNckU3/+gC8LzkGUb9oF+e8W8TdUsxPwvdOgE=
 github.com/onsi/gomega v1.39.1 h1:1IJLAad4zjPn2PsnhH70V4DKRFlrCzGBNrNaru+Vf28=
 github.com/onsi/gomega v1.39.1/go.mod h1:hL6yVALoTOxeWudERyfppUcZXjMwIMLnuSfruD2lcfg=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
@@ -280,6 +282,8 @@ github.com/thediveo/whalewatcher v0.15.0 h1:pU0JCdyRMDDC6HgP7z6XgCTR5IwUxEu8k49e
 github.com/thediveo/whalewatcher v0.15.0/go.mod h1:E7h5NaP0YNzBl2KB+D/UZ0Mv8ZzvcYhDKjYfRdUeQI4=
 github.com/thediveo/whalewatcher/v2 v2.0.0-pre.1 h1:EqUx7dXHaYc1CYSAqcOCQGR4pgV2tI5//Hl1jYY+nhc=
 github.com/thediveo/whalewatcher/v2 v2.0.0-pre.1/go.mod h1:lUZCJYVhlGniXjEFYuNbIzkyzRc4Ttk9Jixnyxb0jkU=
+github.com/thediveo/whalewatcher/v2 v2.0.0 h1:NR7iyp/8OKmxGTCTVz1rx058DIqPrpDFFjZjsemjUxM=
+github.com/thediveo/whalewatcher/v2 v2.0.0/go.mod h1:lUZCJYVhlGniXjEFYuNbIzkyzRc4Ttk9Jixnyxb0jkU=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
 github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
@@ -439,5 +443,7 @@ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8s.io/cri-api v0.36.0-alpha.2 h1:4ycXTqSwWFknsSitl0bdRxgIJY7GQyZhtrtqjv04w6I=
 k8s.io/cri-api v0.36.0-alpha.2/go.mod h1:sez47HjW1useDMcQeVkW7kQNjwzaLJlaJoMcWYU6WVE=
+k8s.io/cri-api v0.36.0 h1:DSuUPB3HjUPIFBXmXIWbooJlr1euKXzPSdhpeCRgLFA=
+k8s.io/cri-api v0.36.0/go.mod h1:1gMX7udEAiRCWGS4uxscdbxq6vufwhZt38Ri+XH6P00=
 pgregory.net/rapid v1.2.0 h1:keKAYRcjm+e1F0oAuU5F5+YPAWcyxNNRK2wud503Gnk=
 pgregory.net/rapid v1.2.0/go.mod h1:PY5XlDGj0+V1FCq0o192FdRhpKHGTRIWBgqjDBTrq04=

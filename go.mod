@@ -1,13 +1,13 @@
 module github.com/siemens/turtlefinder
 
-go 1.25.9
+go 1.25.5
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/containerd/containerd/v2 v2.2.3
 	github.com/google/uuid v1.6.0
 	github.com/moby/moby/client v0.4.1
-	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/ginkgo/v2 v2.28.2
 	github.com/onsi/gomega v1.39.1
 	github.com/thediveo/fdooze v0.3.2
 	github.com/thediveo/go-plugger/v3 v3.2.0
@@ -16,7 +16,6 @@ require (
 	github.com/thediveo/procfsroot v1.0.2
 	github.com/thediveo/safe v0.9.0
 	github.com/thediveo/success v1.0.3
-	github.com/thediveo/whalewatcher/v2 v2.0.0-pre.1
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
 	golang.org/x/sync v0.20.0
 	k8s.io/cri-api v0.36.0-alpha.2

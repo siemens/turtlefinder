@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/thediveo/fdooze v0.3.2
 	github.com/thediveo/go-plugger/v3 v3.2.0
-	github.com/thediveo/lxkns v0.44.0
+	github.com/thediveo/lxkns v0.45.0
 	github.com/thediveo/morbyd/v2 v2.0.0
 	github.com/thediveo/procfsroot v1.0.2
 	github.com/thediveo/safe v0.9.0
@@ -86,7 +86,6 @@ require (
 	github.com/thediveo/faf v0.2.2 // indirect
 	github.com/thediveo/go-mntinfo v1.0.4 // indirect
 	github.com/thediveo/ioctl v0.9.4 // indirect
-	github.com/thediveo/whalewatcher v0.15.0 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20251211185533-a2aa163d723f // indirect
 	github.com/tonistiigi/go-csvvalue v0.0.0-20240814133006-030d3b2625d0 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect

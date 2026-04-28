@@ -70,8 +70,6 @@ github.com/distribution/reference v0.6.0 h1:0IXCQ5g4/QMHHkarYzh5l+u8T3t73zM5Qvfr
 github.com/distribution/reference v0.6.0/go.mod h1:BbU0aIcezP1/5jX/8MP0YiH4SdvB5Y4f/wlDRiLyi3E=
 github.com/docker/cli v29.3.1+incompatible h1:M04FDj2TRehDacrosh7Vlkgc7AuQoWloQkf1PA5hmoI=
 github.com/docker/cli v29.3.1+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
-github.com/docker/docker v28.5.2+incompatible h1:DBX0Y0zAjZbSrm1uzOkdr1onVghKaftjlSWt4AFexzM=
-github.com/docker/docker v28.5.2+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-credential-helpers v0.9.5 h1:EFNN8DHvaiK8zVqFA2DT6BjXE0GzfLOZ38ggPTKePkY=
 github.com/docker/docker-credential-helpers v0.9.5/go.mod h1:v1S+hepowrQXITkEfw6o4+BMbGot02wiKpzWhGUZK6c=
 github.com/docker/go-connections v0.7.0 h1:6SsRfJddP22WMrCkj19x9WKjEDTB+ahsdiGYf0mN39c=
@@ -254,10 +252,8 @@ github.com/thediveo/go-plugger/v3 v3.2.0 h1:a3GuSoACLie9STcjGRJEbY5Rpi+35h1WfEYG
 github.com/thediveo/go-plugger/v3 v3.2.0/go.mod h1:1eA2LCDOeqQlMiqfvY+TwJcWyZsouNdG2Ez8mmKHQfs=
 github.com/thediveo/ioctl v0.9.4 h1:HvEW9BW0qkyDXaGqp24Vb4sFrfN5718WLx6VLV2uTxU=
 github.com/thediveo/ioctl v0.9.4/go.mod h1:2k2Us0WLUrBRJWmNo5b0JCg1HicqxxoxB8wKml+e0Eo=
-github.com/thediveo/lxkns v0.44.0 h1:SnC50evpararXVGzbE1S7Nj6ZLNP6TQWXKZcq/sts9k=
-github.com/thediveo/lxkns v0.44.0/go.mod h1:Assfv/WKgimq5V1dtHLg5n8NvsAXmkc7G4c2YY1E4mM=
-github.com/thediveo/morbyd v0.22.0 h1:VARKbgZk7QJH9ZWbXzowm4aclQC22NsbsfHCXP4IOy0=
-github.com/thediveo/morbyd v0.22.0/go.mod h1:TWuHc0KBl0g8Y9vlMPOfzcL1gSa/j9tEJ/wpniq1fGI=
+github.com/thediveo/lxkns v0.45.0 h1:Bjh7kkp/Xh3XbVrn+rjX13G7lD0swxIvfr0YPzyjF7M=
+github.com/thediveo/lxkns v0.45.0/go.mod h1:XoFun3TnlTu3oCRLoU51i0hnuFLLDvbY3FyvSH8sg9M=
 github.com/thediveo/morbyd/v2 v2.0.0 h1:8eojQ+nQL/711/4ghp84Qw9lIpcXTLO9L9QI7AgHdXc=
 github.com/thediveo/morbyd/v2 v2.0.0/go.mod h1:Rt4Kh7dSS2DaGpq2yEigPDdNT029HZW8qPTvddT4gzA=
 github.com/thediveo/namspill v0.1.7 h1:AzgOtfxhtawA4mZ8csBJ7NwJ28MowW+CyFQommK6Ka8=
@@ -276,8 +272,6 @@ github.com/thediveo/testbasher v1.0.9 h1:ErE+ubPmb/2oSCqH3oIvWWw5yC3nXn9x11RwOT0
 github.com/thediveo/testbasher v1.0.9/go.mod h1:bub0xioQTscD+fPjU9VkBL+A61tCRHpW24FnWto8kwc=
 github.com/thediveo/testily v0.3.0 h1:ddI1NOjp/B1VuA0BjDiqDPUYHicmA/pQAdijvpyMZgg=
 github.com/thediveo/testily v0.3.0/go.mod h1:pVHeQwg928CWd9X5lAiFKa/ZY4qs2reJIzU2dIobfRA=
-github.com/thediveo/whalewatcher v0.15.0 h1:pU0JCdyRMDDC6HgP7z6XgCTR5IwUxEu8k49eH4WQqKY=
-github.com/thediveo/whalewatcher v0.15.0/go.mod h1:E7h5NaP0YNzBl2KB+D/UZ0Mv8ZzvcYhDKjYfRdUeQI4=
 github.com/thediveo/whalewatcher/v2 v2.0.0 h1:NR7iyp/8OKmxGTCTVz1rx058DIqPrpDFFjZjsemjUxM=
 github.com/thediveo/whalewatcher/v2 v2.0.0/go.mod h1:lUZCJYVhlGniXjEFYuNbIzkyzRc4Ttk9Jixnyxb0jkU=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
@@ -439,7 +433,5 @@ honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8s.io/cri-api v0.36.0-alpha.2 h1:4ycXTqSwWFknsSitl0bdRxgIJY7GQyZhtrtqjv04w6I=
 k8s.io/cri-api v0.36.0-alpha.2/go.mod h1:sez47HjW1useDMcQeVkW7kQNjwzaLJlaJoMcWYU6WVE=
-k8s.io/cri-api v0.36.0 h1:DSuUPB3HjUPIFBXmXIWbooJlr1euKXzPSdhpeCRgLFA=
-k8s.io/cri-api v0.36.0/go.mod h1:1gMX7udEAiRCWGS4uxscdbxq6vufwhZt38Ri+XH6P00=
 pgregory.net/rapid v1.2.0 h1:keKAYRcjm+e1F0oAuU5F5+YPAWcyxNNRK2wud503Gnk=
 pgregory.net/rapid v1.2.0/go.mod h1:PY5XlDGj0+V1FCq0o192FdRhpKHGTRIWBgqjDBTrq04=

@@ -4,7 +4,7 @@ go 1.25.9
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/containerd/containerd/v2 v2.2.4
+	github.com/containerd/containerd/v2 v2.2.5
 	github.com/google/uuid v1.6.0
 	github.com/moby/moby/client v0.4.1
 	github.com/onsi/ginkgo/v2 v2.28.2
@@ -18,7 +18,7 @@ require (
 	github.com/thediveo/success v1.0.3
 	github.com/thediveo/whalewatcher/v2 v2.0.0
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.21.0
 	k8s.io/cri-api v0.36.0-alpha.2
 )
 
@@ -102,13 +102,13 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/mod v0.36.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.44.0 // indirect
+	golang.org/x/tools v0.45.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260128011058-8636f8732409 // indirect
 	google.golang.org/grpc v1.80.0 // indirect

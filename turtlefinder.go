@@ -14,18 +14,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/siemens/turtlefinder/v2/activator"
-	"github.com/siemens/turtlefinder/v2/detector"
-	"golang.org/x/sync/semaphore"
-
-	_ "github.com/siemens/turtlefinder/v2/activator/all" // pull in activator and socket-activated engine detector plugins
-	_ "github.com/siemens/turtlefinder/v2/detector/all"  // pull in engine detector plugins
-
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/containerizer"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/procfsroot"
 	"github.com/thediveo/whalewatcher/v2/watcher"
+	"golang.org/x/sync/semaphore"
+
+	"github.com/siemens/turtlefinder/v2/activator"
+	_ "github.com/siemens/turtlefinder/v2/activator/all" // pull in activator and socket-activated engine detector plugins
+	"github.com/siemens/turtlefinder/v2/detector"
+	_ "github.com/siemens/turtlefinder/v2/detector/all" // pull in engine detector plugins
 )
 
 // Overseer gives access to information about container engines currently
@@ -68,9 +67,9 @@ type TurtleFinder struct {
 	activators map[model.PIDType]*socketActivatorProcess // socket activators we've found.
 }
 
-// TurtleFinder implements the lxkns Containerizer interface. And it's also an
+// TurtleFinder implements the lxkns Containerizer and Oversseer interfaces. And it's also an
 // Overseer.
-var _ containerizer.Containerizer = (*TurtleFinder)(nil)
+var _ containerizer.Overseer = (*TurtleFinder)(nil)
 var _ Overseer = (*TurtleFinder)(nil)
 
 // enginePlugin represents the process names of a container engine discovery
@@ -148,11 +147,9 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 	return f
 }
 
-// Containers returns the current container state of (alive) containers from all
-// discovered container engines.
-func (f *TurtleFinder) Containers(
+func (f *TurtleFinder) EnginesInclContainers(
 	ctx context.Context, procs model.ProcessTable, pidmap model.PIDMapper,
-) []*model.Container {
+) []*model.ContainerEngine {
 	// Do some quick housekeeping first: remove engines (watchers) whose
 	// processes have vanished. Also remove vanished socket activators like
 	// "systemd" in containers.
@@ -166,9 +163,8 @@ func (f *TurtleFinder) Containers(
 		allEngines = append(allEngines, engines...)
 	}
 	f.mux.Unlock()
-	allcontainers := []*model.Container{}
 	if len(allEngines) == 0 {
-		return allcontainers
+		return []*model.ContainerEngine{}
 	}
 	// Feel the heat and query the engines in parallel; to collect the results
 	// we use a buffered channel of the size equal the number of engines to
@@ -176,32 +172,49 @@ func (f *TurtleFinder) Containers(
 	// over *all parallel calls* to this method, and not just within a single
 	// call.
 	slog.Info("consulting container engines in parallel", slog.Int("count", len(allEngines)))
-	enginecontainers := make(chan []*model.Container, len(allEngines))
+	engineWorkloadCh := make(chan *model.ContainerEngine, len(allEngines))
 	var theendisnear atomic.Int64 // track amount of engine results
 	theendisnear.Add(int64(len(allEngines)))
 	for _, engine := range allEngines {
 		if err := f.workersem.Acquire(ctx, 1); err != nil {
-			return allcontainers
+			return []*model.ContainerEngine{}
 		}
 		go func(engine *Engine) {
 			defer f.workersem.Release(1)
-			containers := engine.Containers(ctx)
-			enginecontainers <- containers
+			engineWorkloadCh <- engine.EngineContainers(ctx)
 			if theendisnear.Add(-1) > 0 {
 				return
 			}
-			close(enginecontainers)
+			close(engineWorkloadCh)
 		}(engine)
 	}
 	// Wait for all engine results to come in one after another and the engine
 	// result channel to finally close for good.
-	for containers := range enginecontainers {
-		allcontainers = append(allcontainers, containers...)
+	enginesInclContainers := make([]*model.ContainerEngine, 0, len(allEngines))
+	for engine := range engineWorkloadCh {
+		enginesInclContainers = append(enginesInclContainers, engine)
 	}
 	// Fill in the engine hierarchy, if necessary: note that we can't use this
 	// without knowing the containers and especially their names.
-	stackEngines(allcontainers, allEngines, procs)
+	stackEngines(enginesInclContainers, allEngines, procs)
 
+	return enginesInclContainers
+}
+
+// Containers returns the current container state of (alive) containers from all
+// discovered container engines.
+func (f *TurtleFinder) Containers(
+	ctx context.Context, procs model.ProcessTable, pidmap model.PIDMapper,
+) []*model.Container {
+	enginesInclContainers := f.EnginesInclContainers(ctx, procs, pidmap)
+	count := 0
+	for _, engine := range enginesInclContainers {
+		count += len(engine.Containers)
+	}
+	allcontainers := make([]*model.Container, 0, count)
+	for _, engine := range enginesInclContainers {
+		allcontainers = append(allcontainers, engine.Containers...)
+	}
 	return allcontainers
 }
 

@@ -70,7 +70,20 @@ func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *
 //
 // The containers returned will reference a model.ContainerEngine and thus are
 // decoupled from a turtlefinder's (container) Engine object.
+//
+// Deprecated: use [Engine.EngineContainers] instead, as it returns the engine
+// model object even if there is currently no workload on it.
 func (e *Engine) Containers(ctx context.Context) []*model.Container {
+	return e.EngineContainers(ctx).Containers
+}
+
+// EngineContainers returns a new container engine model object with its
+// currently alive (if any) containers managed by this engine, using the
+// associated watcher.
+//
+// The engine and its containers returned will reference a model.ContainerEngine
+// and thus are decoupled from a turtlefinder's (container) Engine object.
+func (e *Engine) EngineContainers(ctx context.Context) *model.ContainerEngine {
 	eng := &model.ContainerEngine{
 		ID:       e.ID,
 		Type:     e.Watcher.Type(),
@@ -78,6 +91,7 @@ func (e *Engine) Containers(ctx context.Context) []*model.Container {
 		API:      e.Watcher.API(),
 		PID:      model.PIDType(e.Watcher.PID()),
 		PPIDHint: e.PPIDHint,
+		Labels:   model.Labels{},
 	}
 	// Adapt the whalewatcher container model to the lxkns container model,
 	// where the latter takes container engines and groups into account of its
@@ -111,7 +125,7 @@ func (e *Engine) Containers(ctx context.Context) []*model.Container {
 			eng.AddContainer(cntr)
 		}
 	}
-	return eng.Containers
+	return eng
 }
 
 // IsAlive returns true as long as the engine watcher is operational and hasn't

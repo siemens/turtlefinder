@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # As we cannot use devcontainer features here, we're running the installation
 # scripts directly from the build context without copying them first into the

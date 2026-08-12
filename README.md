@@ -6,32 +6,33 @@
 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/siemens/turtlefinder)](https://pkg.go.dev/github.com/siemens/turtlefinder)
 [![GitHub](https://img.shields.io/github/license/siemens/turtlefinder)](https://img.shields.io/github/license/siemens/turtlefinder)
+<br>
 ![build and test](https://github.com/siemens/turtlefinder/actions/workflows/buildandtest.yaml/badge.svg?branch=main)
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
-[![Go Report Card](https://goreportcard.com/badge/github.com/siemens/turtlefinder)](https://goreportcard.com/report/github.com/siemens/turtlefinder)
 ![Coverage](https://img.shields.io/badge/Coverage-87.6%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
 `turtlefinder/v2` is a Go module that discovers various container engines in a
-Linux host, including container engines that have been put into containers. If
-you consider such configurations to be rarer than rare, then please take a look
-at KinD ([Kubernetes-in-Docker](https://kind.sigs.k8s.io/)) as well as Docker
-Desktop on WSL2 ([Windows Subsystem for
-Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)).
+Linux host, including container engines that have been put _into_ containers.
 
-It supports the following container engines:
+Putting container engines into containers actually has become even more common
+these days, such as [Github Codespaces](https://github.com/features/codespaces)
+where the customized development environment lives inside a container in a
+codespace cloud VM and several default customizations coming with a
+Docker-in-Docker experience. Earlier, ([Kubernetes-in-Docker
+(KinD)](https://kind.sigs.k8s.io/)) operated "Dockerized" Kubernetes nodes on a
+single Docker host.
+
+## Supported Engines
+
+The `turflefinder` supports the following container engines:
 - Docker/Moby
 - containerd (both native API as well as CRI Event PLEG API)
 - CRI-O (CRI Event PLEG API)
-- podman (only when socket-activated and via Docker-compatible API)
-
-The `turtlefinder/v2` package originates from
-[Ghostwire](https://github.com/siemens/ghostwire) (part of the Edgeshark
-project) and has been carved out in order to foster easy reuse in other projects
-without the need for importing the full Ghostwire module.
+- podman, but only when _socket-activated_ and via the Docker-compatible API.
 
 ## v2
 
@@ -137,9 +138,17 @@ you a controlled and somewhat isolated environment.
 4. then select the (default) "turtlefinder (docker-in-docker)" configuration,
    and off you go...
 
-# Contributing
+## Contributing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## History
+
+The `turtlefinder/v2` package originates from
+[Ghostwire](https://github.com/siemens/ghostwire) (which is a part of the
+[Edgeshark](https://github.com/siemens/edgeshark) project) and has been carved
+out in order to foster easy reuse in other projects without the need for
+importing the full Ghostwire module.
 
 ## License and Copyright
 

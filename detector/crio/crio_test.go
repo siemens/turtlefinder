@@ -13,8 +13,6 @@ import (
 
 	"github.com/containerd/containerd/v2/client"
 	"github.com/google/uuid"
-	detect "github.com/siemens/turtlefinder/v2/detector"
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/morbyd/v2"
 	"github.com/thediveo/morbyd/v2/build"
@@ -25,6 +23,9 @@ import (
 	"github.com/thediveo/whalewatcher/v2/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/v2/test"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	detect "github.com/siemens/turtlefinder/v2/detector"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -119,7 +120,7 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 			return err
 		}).Within(30*time.Second).ProbeEvery(1*time.Second).
 			Should(Succeed(), "CRI-O API never became responsive")
-		cdclient.Close() // not needed anymore, will create fresh ones over and over again
+		_ = cdclient.Close() // not needed anymore, will create fresh ones over and over again
 	})
 
 	It("registers correctly", func() {
@@ -151,7 +152,7 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 		}).Within(30*time.Second).ProbeEvery(1*time.Second).
 			Should(Succeed(), "CRI-O API never became responsive")
 		DeferCleanup(func() {
-			cricl.Close()
+			_ = cricl.Close()
 			cricl = nil
 		})
 

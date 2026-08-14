@@ -244,8 +244,8 @@ github.com/thediveo/go-plugger/v3 v3.2.2 h1:q5Y2dq67mi4UI0i7O7/Ub/sFHyzzvGux2/cT
 github.com/thediveo/go-plugger/v3 v3.2.2/go.mod h1:egbJVThoWjPZMyExuI3gIplOh7PrK8UU2RQaKP7cWMM=
 github.com/thediveo/ioctl v0.9.5 h1:X/EEJU7102FXAIjjZ2q/I87N83aEaPlov1pWWa+xNHI=
 github.com/thediveo/ioctl v0.9.5/go.mod h1:4CmmPKHFpLvdSsatPeJbXf1/ME+XQNndnQzcL8D2l9k=
-github.com/thediveo/lxkns v0.45.5-0.20260812180446-979551b95994 h1:qVGR4MgjuWv2Lbd3TV81/8GFZ3QQ74i5Z0HgOjJ4KlI=
-github.com/thediveo/lxkns v0.45.5-0.20260812180446-979551b95994/go.mod h1:cdThypEjdR0Q1ZIq8KnX8GGQR7lqyNme2B7N4QGI+DU=
+github.com/thediveo/lxkns v0.46.0 h1:cvrPYq7FOeXq1i6M38Ig0ZDNnwI2UInnCpxD4CEvjW8=
+github.com/thediveo/lxkns v0.46.0/go.mod h1:mj3hHolUdMXPhWYz8F5fHCGHl7dYAm00QgXiAAU9s3k=
 github.com/thediveo/morbyd/v2 v2.2.4 h1:tTgjhjqnMF7qkYp/qmeXeJ84bqHAfFtUeR0MGjbQcio=
 github.com/thediveo/morbyd/v2 v2.2.4/go.mod h1:yQP3QmXsnhMqeElaP15olBsUXkOBCTXfuHSyW5BEBCA=
 github.com/thediveo/namspill v0.1.9 h1:IwgfDwPf8ciQTi/rLjmxWfk5Z85tqJvwnsIF0BbX2qo=
@@ -327,8 +327,6 @@ golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPh
 golang.org/x/crypto v0.54.0 h1:YLIA59K4fiNzHzjnZt2tUJQjQtUWfWbeHBqKtk3eScw=
 golang.org/x/crypto v0.54.0/go.mod h1:KWL8ny2AZdGR2cWmzeHrp2azQPGogOv+HeQaVEXC2dk=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
-golang.org/x/exp v0.0.0-20260812173653-3d80eb74bc5b h1:3XR0v9KL97wjTmRb+6RqMylL4d7ZWM1sQYIITGDxtmg=
-golang.org/x/exp v0.0.0-20260812173653-3d80eb74bc5b/go.mod h1:EdfpwwqSu+0Li0mzskwHU6FWDV3t9Q+RZDo3QMUtL3Q=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20190227174305-5b3e6a55c961/go.mod h1:wehouNa3lNwaWXcvxsM5YxQ5yQlVC4a0KAMCusXpPoU=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=

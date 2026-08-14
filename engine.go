@@ -7,9 +7,11 @@ package turtlefinder
 import (
 	"context"
 	"log/slog"
+	"maps"
 	"time"
 
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/xslog"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 )
 
@@ -56,9 +58,9 @@ func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *
 		slog.String("type", w.Type()), slog.String("id", e.ID), slog.String("version", e.Version),
 		slog.Int("pid", w.PID()))
 	go func() {
-		err := e.Watcher.Watch(ctx)
+		err := e.Watch(ctx)
 		slog.Info("stopped watching container engine due to failure",
-			slog.Int("pid", w.PID()), slog.String("err", err.Error()))
+			slog.Int("pid", w.PID()), xslog.Error(err))
 		close(e.Done)
 		e.Close()
 	}()
@@ -86,10 +88,10 @@ func (e *Engine) Containers(ctx context.Context) []*model.Container {
 func (e *Engine) EngineContainers(ctx context.Context) *model.ContainerEngine {
 	eng := &model.ContainerEngine{
 		ID:       e.ID,
-		Type:     e.Watcher.Type(),
+		Type:     e.Type(),
 		Version:  e.Version,
-		API:      e.Watcher.API(),
-		PID:      model.PIDType(e.Watcher.PID()),
+		API:      e.API(),
+		PID:      model.PIDType(e.PID()),
 		PPIDHint: e.PPIDHint,
 		Labels:   model.Labels{},
 	}
@@ -103,15 +105,6 @@ func (e *Engine) EngineContainers(ctx context.Context) *model.ContainerEngine {
 			continue
 		}
 		for _, container := range project.Containers() {
-			// Ouch! Make sure to clone the Labels map and not simply pass it
-			// directly on to our ontainer objects. Otherwise decorators adding
-			// labels would modify the labels shared through the underlying
-			// container label source. So, clone the labels (top-level only) and
-			// then happy decorating.
-			clonedLabels := model.Labels{}
-			for k, v := range container.Labels {
-				clonedLabels[k] = v
-			}
 			cntr := &model.Container{
 				ID:     container.ID,
 				Name:   container.Name,
@@ -119,7 +112,7 @@ func (e *Engine) EngineContainers(ctx context.Context) *model.ContainerEngine {
 				Flavor: eng.Type,
 				PID:    model.PIDType(container.PID),
 				Paused: container.Paused,
-				Labels: clonedLabels,
+				Labels: maps.Clone(container.Labels),
 				Engine: eng,
 			}
 			eng.AddContainer(cntr)

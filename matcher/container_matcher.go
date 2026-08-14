@@ -19,7 +19,7 @@ import (
 // *model.Container with the specified name or ID. Alternatively of a name/ID
 // string, a GomegaMatcher can also be specified for matching the name or ID,
 // such as ContainSubstring and MatchRegexp.
-func HaveContainerNameID(nameorid interface{}) types.GomegaMatcher {
+func HaveContainerNameID(nameorid any) types.GomegaMatcher {
 	var nameoridMatcher types.GomegaMatcher
 	switch nameorid := nameorid.(type) {
 	case string:
@@ -30,7 +30,7 @@ func HaveContainerNameID(nameorid interface{}) types.GomegaMatcher {
 		panic("nameorid argument must be string or GomegaMatcher")
 	}
 	return g.SatisfyAny(
-		g.WithTransform(func(actual interface{}) (string, error) {
+		g.WithTransform(func(actual any) (string, error) {
 			switch container := actual.(type) {
 			case *model.Container:
 				return container.ID, nil
@@ -39,7 +39,7 @@ func HaveContainerNameID(nameorid interface{}) types.GomegaMatcher {
 			}
 			return "", fmt.Errorf("HaveContainerNameID expects a model.Container or *model.Container, but got %T", actual)
 		}, nameoridMatcher),
-		g.WithTransform(func(actual interface{}) (string, error) {
+		g.WithTransform(func(actual any) (string, error) {
 			switch container := actual.(type) {
 			case *model.Container:
 				return container.Name, nil

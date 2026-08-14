@@ -12,9 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siemens/turtlefinder/v2/activator/podman"
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
-	"github.com/siemens/turtlefinder/v2/matcher"
 	"github.com/thediveo/lxkns/discover"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/morbyd/v2"
@@ -25,6 +22,10 @@ import (
 	"github.com/thediveo/morbyd/v2/timestamper"
 	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
+
+	"github.com/siemens/turtlefinder/v2/activator/podman"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
+	"github.com/siemens/turtlefinder/v2/matcher"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

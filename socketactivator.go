@@ -6,19 +6,20 @@ package turtlefinder
 
 import (
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/cespare/xxhash/v2"
-	"github.com/siemens/turtlefinder/v2/activator"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/xslog"
 	"github.com/thediveo/procfsroot"
 	"github.com/thediveo/whalewatcher/v2/watcher"
+
+	"github.com/siemens/turtlefinder/v2/activator"
 )
 
 // socketActivatorProcess keeps track of the socket activation configuration and
@@ -116,7 +117,7 @@ func (s *socketActivatorProcess) update(wg *sync.WaitGroup) {
 	rawsox, hash, err := s.rawSocketFdsWithHash()
 	if err != nil {
 		slog.Error("cannot update socket activator state",
-			slog.String("err", err.Error()))
+			xslog.Error(err))
 		return
 	}
 	newapis := s.discoverAPIPaths(rawsox, hash)

@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/v2/client"
-	detect "github.com/siemens/turtlefinder/v2/detector"
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/morbyd/v2"
 	"github.com/thediveo/morbyd/v2/build"
@@ -23,6 +21,9 @@ import (
 	"github.com/thediveo/morbyd/v2/timestamper"
 	"github.com/thediveo/whalewatcher/v2/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/v2/test"
+
+	detect "github.com/siemens/turtlefinder/v2/detector"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -115,7 +116,7 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 			return err
 		}).Within(30*time.Second).ProbeEvery(1*time.Second).
 			Should(Succeed(), "containerd API never became responsive")
-		cdclient.Close() // not needed anymore, will create fresh ones over and over again
+		_ = cdclient.Close() // not needed anymore, will create fresh ones over and over again
 	})
 
 	It("registers correctly", func() {
@@ -176,7 +177,6 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 		})
 		Expect(ws).To(HaveLen(2), "expected two watchers")
 		for _, w := range ws {
-			w := w
 			defer w.Close()
 			go func() { // ...will be ended by cancelling the context
 				_ = w.Watch(ctx)

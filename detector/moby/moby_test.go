@@ -10,14 +10,14 @@ import (
 	"os"
 	"time"
 
-	detect "github.com/siemens/turtlefinder/v2/detector"
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
-
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/morbyd/v2"
 	"github.com/thediveo/morbyd/v2/run"
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
+
+	detect "github.com/siemens/turtlefinder/v2/detector"
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

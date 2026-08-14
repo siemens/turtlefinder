@@ -5,8 +5,9 @@
 package all
 
 import (
-	"github.com/siemens/turtlefinder/v2/detector"
 	"github.com/thediveo/go-plugger/v3"
+
+	"github.com/siemens/turtlefinder/v2/detector"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

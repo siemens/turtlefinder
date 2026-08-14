@@ -5,8 +5,9 @@
 package systemd
 
 import (
-	"github.com/siemens/turtlefinder/v2/activator"
 	"github.com/thediveo/go-plugger/v3"
+
+	"github.com/siemens/turtlefinder/v2/activator"
 )
 
 // Register this systemd socket service activator discovery plugin. This

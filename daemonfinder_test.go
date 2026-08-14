@@ -47,11 +47,11 @@ var _ = Describe("finding socket-activated demons", Serial, Ordered, func() {
 		defer cancel()
 		d := net.Dialer{}
 		dsock := Successful(d.DialContext(ctx, "unix", "/run/docker.sock"))
-		defer dsock.Close()
+		defer func() { _ = dsock.Close() }()
 
 		By("finding the ino of the Docker API socket from /proc/self/net/unix")
 		netunix := Successful(os.Open("/proc/self/net/unix"))
-		defer netunix.Close()
+		defer func() { _ = netunix.Close() }()
 		var udsino uint64
 
 		scanner := bufio.NewScanner(netunix)
@@ -67,6 +67,7 @@ var _ = Describe("finding socket-activated demons", Serial, Ordered, func() {
 			udsino = uint64(Successful(strconv.ParseUint(fields[6], 10, 64)))
 			break
 		}
+		Expect(scanner.Err()).NotTo(HaveOccurred())
 		Expect(udsino).NotTo(BeZero())
 
 		By("searching the demon")

@@ -10,7 +10,7 @@
 ![build and test](https://github.com/siemens/turtlefinder/actions/workflows/buildandtest.yaml/badge.svg?branch=main)
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
-![Coverage](https://img.shields.io/badge/Coverage-87.6%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-88.0%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)

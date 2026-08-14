@@ -14,11 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
 	"github.com/thediveo/lxkns/model"
 	engineclient "github.com/thediveo/whalewatcher/v2/engineclient/moby"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
+
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -115,7 +116,7 @@ var _ = Describe("watch", Serial, func() {
 
 			By("finding the ino of the Docker API socket from /proc/self/net/unix")
 			netunix := Successful(os.Open("/proc/self/net/unix"))
-			defer netunix.Close()
+			DeferCleanup(netunix.Close)
 			var udsino uint64
 			scanner := bufio.NewScanner(netunix)
 			for scanner.Scan() {
@@ -130,6 +131,7 @@ var _ = Describe("watch", Serial, func() {
 				udsino = uint64(Successful(strconv.ParseUint(fields[6], 10, 64)))
 				break
 			}
+			Expect(scanner.Err()).NotTo(HaveOccurred())
 			Expect(udsino).NotTo(BeZero())
 
 			By("activating and watching")

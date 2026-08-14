@@ -8,6 +8,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,13 +26,13 @@ import (
 	"github.com/thediveo/whalewatcher/v2/test"
 	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
-	"golang.org/x/exp/slices"
+
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
+	. "github.com/siemens/turtlefinder/v2/matcher"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
-	. "github.com/siemens/turtlefinder/v2/matcher"
 	. "github.com/thediveo/fdooze"
 	. "github.com/thediveo/success"
 )

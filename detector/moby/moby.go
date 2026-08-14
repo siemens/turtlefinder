@@ -13,6 +13,7 @@ import (
 	"github.com/moby/moby/client"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/xslog"
 	mobyengine "github.com/thediveo/whalewatcher/v2/engineclient/moby"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
@@ -53,7 +54,8 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			_, err = w.Client().(*client.Client).Info(ctx, client.InfoOptions{})
 			if ctxerr := ctx.Err(); ctxerr != nil {
-				slog.Debug("Docker API Info call context hit deadline", slog.String("err", ctxerr.Error()))
+				slog.Debug("Docker API Info call context hit deadline",
+					xslog.Error(ctxerr))
 			}
 			cancel()
 			if err == nil {
@@ -61,7 +63,8 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 			}
 			w.Close()
 		}
-		slog.Debug("Docker API endpoint", slog.String("api", apipathname), slog.String("err", err.Error()))
+		slog.Debug("Docker API endpoint", slog.String("api", apipathname),
+			xslog.Error(err))
 	}
 	slog.Error("no working Docker API endpoint found")
 	return nil

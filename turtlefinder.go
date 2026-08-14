@@ -8,6 +8,7 @@ import (
 	"context"
 	"log/slog"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -284,7 +285,7 @@ func (f *TurtleFinder) prune(procs model.ProcessTable) {
 		}
 		// This particular container engine process has gone, so we need to
 		// remove all individual watchers for for it.
-		engines = deleteAndZeroFunc(engines, func(engine *Engine) bool {
+		engines = slices.DeleteFunc(engines, func(engine *Engine) bool {
 			if engine.IsAlive() {
 				return false
 			}

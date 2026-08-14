@@ -12,8 +12,9 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/siemens/turtlefinder/v2/unsorted"
 	"github.com/thediveo/lxkns/model"
+
+	"github.com/siemens/turtlefinder/v2/unsorted"
 )
 
 // soAcceptCon is the state bit mask to identify listening unix domain sockets.
@@ -30,14 +31,14 @@ const sockStream = 1
 // https://man7.org/linux/man-pages/man5/proc.5.html, and the section about
 // /proc/net/unix in particular.
 const (
-	netUnixNumField      = iota //nolint:unused
-	netUnixRefCountField        //nolint:unused
-	netUnixProtocolField        //nolint:unused
-	netUnixFlagsField           //
-	netUnixTypeField            //
-	netUnixStField              //nolint:unused
-	netUnixInodeField           //
-	netUnixPathField            //
+	netUnixNumField = iota
+	netUnixRefCountField
+	netUnixProtocolField
+	netUnixFlagsField
+	netUnixTypeField
+	netUnixStField
+	netUnixInodeField
+	netUnixPathField
 )
 
 // socketFdPrefix is the prefix of the string returned when readlink-ing a file
@@ -225,7 +226,7 @@ func listeningUDSVisibleToProcess(pid model.PIDType) socketPathsByIno {
 	if err != nil {
 		return nil
 	}
-	defer netunixf.Close()
+	defer func() { _ = netunixf.Close() }()
 	// Each line from /proc/[PID]/net/unix lists one socket with its state
 	// ("flags"), type, etc. For precise field semantics, please see:
 	// https://elixir.bootlin.com/linux/v5.0.3/source/net/unix/af_unix.c#L2831
@@ -290,6 +291,7 @@ func listeningUDSVisibleToProcess(pid model.PIDType) socketPathsByIno {
 		}
 		sox[ino] = path // finally map the socket's inode number to its path.
 	}
+	_ = socketscanner.Err()
 	return sox
 }
 

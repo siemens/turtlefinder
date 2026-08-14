@@ -13,11 +13,11 @@ require (
 	github.com/thediveo/go-plugger/v3 v3.2.2
 	github.com/thediveo/lxkns v0.46.0
 	github.com/thediveo/morbyd/v2 v2.2.4
+	github.com/thediveo/nonstd v0.21.0
 	github.com/thediveo/procfsroot v1.0.3
 	github.com/thediveo/safe v0.9.1
 	github.com/thediveo/success v1.3.1
 	github.com/thediveo/whalewatcher/v2 v2.0.1
-	golang.org/x/exp v0.0.0-20260812173653-3d80eb74bc5b
 	golang.org/x/sync v0.22.0
 	k8s.io/cri-api v0.36.3
 )
@@ -82,7 +82,6 @@ require (
 	github.com/thediveo/faf v0.2.3 // indirect
 	github.com/thediveo/go-mntinfo v1.0.5 // indirect
 	github.com/thediveo/ioctl v0.9.5 // indirect
-	github.com/thediveo/nonstd v0.21.0 // indirect
 	github.com/thediveo/testily v0.11.0 // indirect
 	github.com/tonistiigi/fsutil v0.0.0-20260609091201-0257b3308df4 // indirect
 	github.com/tonistiigi/go-csvvalue v0.0.0-20240814133006-030d3b2625d0 // indirect

@@ -9,18 +9,20 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/onsi/gomega/types"
 	"github.com/thediveo/morbyd/v2"
 	"github.com/thediveo/morbyd/v2/run"
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
 
+	"github.com/siemens/turtlefinder/v2/internal/testslog"
+	. "github.com/siemens/turtlefinder/v2/matcher"
+
+	"github.com/onsi/gomega/types"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gleak"
-	"github.com/siemens/turtlefinder/v2/internal/testslog"
-	. "github.com/siemens/turtlefinder/v2/matcher"
 	. "github.com/thediveo/fdooze"
 	. "github.com/thediveo/success"
 )

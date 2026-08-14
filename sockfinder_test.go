@@ -46,7 +46,7 @@ var _ = Describe("socket finder", func() {
 
 		It("only returns sockets, nothing else", func() {
 			fakeproc := Successful(os.MkdirTemp("", "fakeproc-*"))
-			defer os.RemoveAll(fakeproc)
+			DeferCleanup(os.RemoveAll, fakeproc)
 			fakefds := fakeproc + "/proc/123456/fd"
 			Expect(os.MkdirAll(fakefds, 0770)).To(Succeed())
 			Expect(os.Symlink("/foobar", fakefds+"/1")).To(Succeed())
@@ -71,11 +71,11 @@ var _ = Describe("socket finder", func() {
 
 	It("finds listening canary unix socket", func() {
 		fakesockdir := Successful(os.MkdirTemp("", "fakesock-*"))
-		defer os.RemoveAll(fakesockdir)
+		DeferCleanup(os.RemoveAll, fakesockdir)
 
 		canarysockpath := fakesockdir + "/canary.sock"
 		lsock := Successful(net.Listen("unix", canarysockpath))
-		defer lsock.Close()
+		defer func() { _ = lsock.Close() }()
 
 		soxpaths := listeningUDSPathsOfProcess(
 			model.PIDType(os.Getpid()),

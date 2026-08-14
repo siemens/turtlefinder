@@ -9,8 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/siemens/turtlefinder/v2/unsorted"
 	"github.com/thediveo/lxkns/model"
+
+	"github.com/siemens/turtlefinder/v2/unsorted"
 )
 
 // findDaemon finds the (socket-activated) child process that services the

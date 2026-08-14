@@ -12,6 +12,7 @@ import (
 	"github.com/moby/moby/client" // priceless
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/xslog"
 	mobyengine "github.com/thediveo/whalewatcher/v2/engineclient/moby"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
@@ -68,7 +69,8 @@ func (e *Engine) NewWatcher(ctx context.Context, pid model.PIDType, api string) 
 		mobyengine.WithDemonType(Type))
 	if err != nil {
 		slog.Debug("podman API endpoint failed",
-			slog.String("api", api), slog.String("err", err.Error()))
+			slog.String("api", api),
+			xslog.Error(err))
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -77,12 +79,13 @@ func (e *Engine) NewWatcher(ctx context.Context, pid model.PIDType, api string) 
 	if ctxerr := ctx.Err(); ctxerr != nil {
 		err = ctxerr
 		slog.Debug("Docker API Info call context hit deadline",
-			slog.String("err", err.Error()))
+			xslog.Error(err))
 		return nil
 	}
 	if err != nil {
 		slog.Debug("podman API endpoint failed",
-			slog.String("api", api), slog.String("err", err.Error()))
+			slog.String("api", api),
+			xslog.Error(err))
 		return nil
 	}
 	return w

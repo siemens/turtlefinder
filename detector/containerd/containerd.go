@@ -11,17 +11,18 @@ import (
 	"strings"
 	"time"
 
-	detect "github.com/siemens/turtlefinder/v2/detector"
-	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
-
 	"github.com/containerd/containerd/v2/client"
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/xslog"
 	cdengine "github.com/thediveo/whalewatcher/v2/engineclient/containerd"
 	criengine "github.com/thediveo/whalewatcher/v2/engineclient/cri"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
 	"github.com/thediveo/whalewatcher/v2/watcher/cri"
+	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	detect "github.com/siemens/turtlefinder/v2/detector"
 )
 
 // Register this containerd container (engine) discovery plugin. This statically
@@ -41,7 +42,8 @@ func (d *Detector) EngineNames() []string {
 	return []string{"containerd"}
 }
 
-// NewWatcher returns a watcher for tracking alive containerd containers.
+// NewWatchers returns a (single) watcher for tracking alive containerd
+// containers.
 func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []string) []watcher.Watcher {
 	sort.Strings(apis) // in-place
 	for _, apipathname := range apis {
@@ -64,8 +66,8 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		w, err := containerd.New(apipathname, nil, cdengine.WithPID(int(pid)))
 		if err != nil {
 			slog.Debug("containerd API endpoint failed",
-				slog.String("api", apipathname), slog.String("err",
-					err.Error()))
+				slog.String("api", apipathname),
+				xslog.Error(err))
 			continue
 		}
 		versionctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -73,7 +75,7 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			cancel()
 			slog.Debug("containerd API Info call context hit deadline",
-				slog.String("err", err.Error()))
+				xslog.Error(err))
 			w.Close()
 			continue
 		}
@@ -87,7 +89,8 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		// Do we get the bonus CRI API...?
 		criw, err := cri.New(apipathname, nil, criengine.WithPID(int(pid)))
 		if err != nil {
-			slog.Debug("containerd CRI API disabled", slog.String("err", err.Error()))
+			slog.Debug("containerd CRI API disabled",
+				xslog.Error(err))
 			return watchers // NOPE!
 		}
 		// Creating the engine client usually succeeds, even if the CRI API
@@ -99,7 +102,8 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		cancel()
 		if err != nil {
 			criw.Close()
-			slog.Debug("containerd CRI API disabled", slog.String("err", err.Error()))
+			slog.Debug("containerd CRI API disabled",
+				xslog.Error(err))
 			return watchers // NOPE!
 		}
 

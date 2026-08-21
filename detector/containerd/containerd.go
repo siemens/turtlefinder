@@ -90,6 +90,7 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		criw, err := cri.New(apipathname, nil, criengine.WithPID(int(pid)))
 		if err != nil {
 			slog.Debug("containerd CRI API disabled",
+				slog.String("api", apipathname),
 				xslog.Error(err))
 			return watchers // NOPE!
 		}
@@ -103,6 +104,7 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 		if err != nil {
 			criw.Close()
 			slog.Debug("containerd CRI API disabled",
+				slog.String("api", apipathname),
 				xslog.Error(err))
 			return watchers // NOPE!
 		}

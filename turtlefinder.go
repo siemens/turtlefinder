@@ -172,7 +172,7 @@ func (f *TurtleFinder) EnginesInclContainers(
 	// query. Please note that the number of parallel engine queries is bounded
 	// over *all parallel calls* to this method, and not just within a single
 	// call.
-	slog.Info("consulting container engines in parallel", slog.Int("count", len(allEngines)))
+	slog.Info("consulting container engines in parallel to discover workload", slog.Int("count", len(allEngines)))
 	engineWorkloadCh := make(chan *model.ContainerEngine, len(allEngines))
 	var theendisnear atomic.Int64 // track amount of engine results
 	theendisnear.Add(int64(len(allEngines)))
@@ -182,11 +182,22 @@ func (f *TurtleFinder) EnginesInclContainers(
 		}
 		go func(engine *Engine) {
 			defer f.workersem.Release(1)
-			engineWorkloadCh <- engine.EngineContainers(ctx)
+			slog.Debug("consulting",
+				slog.String("type", engine.Type()),
+				slog.Uint64("pid", uint64(engine.PID())),
+				slog.String("api", engine.API()))
+			engineWorkload := engine.EngineContainers(ctx)
+			slog.Debug("discovered engine workload",
+				slog.Int("containers", len(engineWorkload.Containers)),
+				slog.String("type", engine.Type()),
+				slog.Uint64("pid", uint64(engine.PID())),
+				slog.String("api", engine.API()))
+			engineWorkloadCh <- engineWorkload
 			if theendisnear.Add(-1) > 0 {
 				return
 			}
 			close(engineWorkloadCh)
+			slog.Debug("finished consulting container engines")
 		}(engine)
 	}
 	// Wait for all engine results to come in one after another and the engine
@@ -197,7 +208,7 @@ func (f *TurtleFinder) EnginesInclContainers(
 	}
 	// Fill in the engine hierarchy, if necessary: note that we can't use this
 	// without knowing the containers and especially their names.
-	stackEngines(enginesInclContainers, allEngines, procs)
+	stackEngines(enginesInclContainers, allEngines, procs, pidmap)
 
 	return enginesInclContainers
 }

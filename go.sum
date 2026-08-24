@@ -246,8 +246,8 @@ github.com/thediveo/go-plugger/v3 v3.2.2 h1:q5Y2dq67mi4UI0i7O7/Ub/sFHyzzvGux2/cT
 github.com/thediveo/go-plugger/v3 v3.2.2/go.mod h1:egbJVThoWjPZMyExuI3gIplOh7PrK8UU2RQaKP7cWMM=
 github.com/thediveo/ioctl v0.9.5 h1:X/EEJU7102FXAIjjZ2q/I87N83aEaPlov1pWWa+xNHI=
 github.com/thediveo/ioctl v0.9.5/go.mod h1:4CmmPKHFpLvdSsatPeJbXf1/ME+XQNndnQzcL8D2l9k=
-github.com/thediveo/lxkns v0.46.1-0.20260820210149-85452de0a4fa h1:OtTgPWdHbbfvwRz1beDd37osk4NpqkEKbnuDsMQJ1ik=
-github.com/thediveo/lxkns v0.46.1-0.20260820210149-85452de0a4fa/go.mod h1:A9OSUWTuBK2DRkzs/R1958B6CG/W6KjC/V0OYscZWBE=
+github.com/thediveo/lxkns v0.47.0 h1:/iqYxJusjHNOugtASH39RfjuXEwWBbsz5tNA6dlUkf4=
+github.com/thediveo/lxkns v0.47.0/go.mod h1:y3Rt3uA2dhW2pmssPOPzFn4vH8WaVtiXM04n14iQdp4=
 github.com/thediveo/morbyd/v2 v2.2.4 h1:tTgjhjqnMF7qkYp/qmeXeJ84bqHAfFtUeR0MGjbQcio=
 github.com/thediveo/morbyd/v2 v2.2.4/go.mod h1:yQP3QmXsnhMqeElaP15olBsUXkOBCTXfuHSyW5BEBCA=
 github.com/thediveo/namspill v0.1.9 h1:IwgfDwPf8ciQTi/rLjmxWfk5Z85tqJvwnsIF0BbX2qo=

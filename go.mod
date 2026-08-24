@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.42.1
 	github.com/thediveo/fdooze v0.3.4
 	github.com/thediveo/go-plugger/v3 v3.2.2
-	github.com/thediveo/lxkns v0.46.1-0.20260820210149-85452de0a4fa
+	github.com/thediveo/lxkns v0.47.0
 	github.com/thediveo/morbyd/v2 v2.2.4
 	github.com/thediveo/nonstd v0.21.0
 	github.com/thediveo/procfsroot v1.0.3

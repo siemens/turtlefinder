@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.42.1
 	github.com/thediveo/fdooze v0.3.4
 	github.com/thediveo/go-plugger/v3 v3.2.2
-	github.com/thediveo/lxkns v0.46.0
+	github.com/thediveo/lxkns v0.46.1-0.20260820210149-85452de0a4fa
 	github.com/thediveo/morbyd/v2 v2.2.4
 	github.com/thediveo/nonstd v0.21.0
 	github.com/thediveo/procfsroot v1.0.3
@@ -45,6 +45,8 @@ require (
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/gammazero/deque v1.2.1 // indirect
+	github.com/gammazero/workerpool v1.2.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect

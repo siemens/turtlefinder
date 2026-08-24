@@ -10,6 +10,7 @@ import (
 	"maps"
 	"time"
 
+	"github.com/thediveo/lxkns/containerizer/whalefriend"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/nonstd/xslog"
 	"github.com/thediveo/whalewatcher/v2/watcher"
@@ -94,6 +95,11 @@ func (e *Engine) EngineContainers(ctx context.Context) *model.ContainerEngine {
 		PID:      model.PIDType(e.PID()),
 		PPIDHint: e.PPIDHint,
 		Labels:   model.Labels{},
+	}
+	if apiversioner, _ := e.Watcher.(watcher.APIVersioner); apiversioner != nil {
+		if apiver := apiversioner.APIVersion(ctx); apiver != "" {
+			eng.Labels[whalefriend.EngineAPIVersionLabelName] = apiver
+		}
 	}
 	// Adapt the whalewatcher container model to the lxkns container model,
 	// where the latter takes container engines and groups into account of its

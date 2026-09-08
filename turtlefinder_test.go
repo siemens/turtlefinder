@@ -181,7 +181,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 		Eventually(func() []*model.ContainerEngine {
 			lxdisco := discover.Namespaces(discover.WithFullDiscovery())
 			_ = tf.Containers(ctx, lxdisco.Processes, lxdisco.PIDMap)
-			return tf.Engines()
+			return tf.Engines(ctx)
 		}).Within(spinupTimeout).ProbeEvery(spinupPolling).
 			Should(ContainElements(
 				HaveEngine(moby.Type, `^unix:///proc/\d+/root/run/docker.sock$`),
@@ -191,7 +191,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 
 		By("checking for the presence of our dedicated podman-in-Docker engine instance...")
 		pid := Successful(pindCntr.PID(ctx))
-		Expect(tf.Engines()).To(ContainElement(
+		Expect(tf.Engines(ctx)).To(ContainElement(
 			HaveEngine(podman.Type, fmt.Sprintf(`^unix:///proc/%d/root/run/podman/podman.sock$`, pid)),
 		), "missing podman-in-Docker engine")
 

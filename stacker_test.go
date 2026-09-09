@@ -89,9 +89,9 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		}
 
 		var engines []*model.ContainerEngine
-		Eventually(func() []*model.ContainerEngine {
+		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			engines = finder.Engines()
+			engines = finder.Engines(ctx)
 			return engines
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
 			Should(ContainElements(
@@ -153,7 +153,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		By("waiting for turtle finder to catch up")
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			engines := slices.DeleteFunc(finder.Engines(), isStackerTestEngineTyp)
+			engines := slices.DeleteFunc(finder.Engines(ctx), isStackerTestEngineTyp)
 			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
 				return strings.Compare(a.Type, b.Type)
 			})
@@ -203,7 +203,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		By("waiting for the containerized containerd engine to vanish")
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			engines := slices.DeleteFunc(finder.Engines(), isStackerTestEngineTyp)
+			engines := slices.DeleteFunc(finder.Engines(ctx), isStackerTestEngineTyp)
 			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
 				return strings.Compare(a.Type, b.Type)
 			})

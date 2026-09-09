@@ -41,7 +41,7 @@ import (
 //		    engines := o.Engines()
 //	 	}
 type Overseer interface {
-	Engines() []*model.ContainerEngine
+	Engines(context.Context) []*model.ContainerEngine
 }
 
 // Contexter supplies a TurtleFinder with a suitable context for long-running
@@ -246,7 +246,7 @@ func (f *TurtleFinder) Close() {
 
 // Engines returns information about the container engines currently being
 // monitored.
-func (f *TurtleFinder) Engines() []*model.ContainerEngine {
+func (f *TurtleFinder) Engines(context.Context) []*model.ContainerEngine {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	allEngines := make([]*model.ContainerEngine, 0, len(f.engines))

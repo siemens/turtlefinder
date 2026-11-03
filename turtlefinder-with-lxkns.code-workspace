@@ -10,7 +10,15 @@
     "settings": {
         "go.buildTags": "matchers",
         "go.testTags": "matchers",
-        "go.lintTool": "golangci-lint",
+        "go.lintTool": "golangci-lint-v2",
+        "go.alternateTools": {
+            "customFormatter": "golangci-lint-v2"
+        },
+        "go.formatTool": "custom",
+        "go.formatFlags": [
+            "fmt",
+            "--stdin"
+        ],
         "terminal.integrated.scrollback": 10000
     }
 }

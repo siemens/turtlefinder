@@ -32,7 +32,7 @@
     },
     "remoteEnv": {
         "GOPATH": "/home/vscode/go",
-        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${localEnv:PATH}"
+        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${containerEnv:PATH}"
     },
     "customizations": {
         "vscode": {

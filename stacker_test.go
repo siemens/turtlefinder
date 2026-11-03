@@ -22,7 +22,6 @@ import (
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
 	"github.com/thediveo/whalewatcher/v2/engineclient/cri"
-	"github.com/thediveo/whalewatcher/v2/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/v2/test"
 	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
@@ -38,7 +37,8 @@ import (
 )
 
 const (
-	kindischName = "turtlefinder-stacker"
+	kindischName      = "turtlefinder-stacker"
+	kindischImageName = "siemens/turtlefinder-kindisch-stacker"
 
 	testNamespace     = "testing"
 	testContainerName = "canary"
@@ -103,7 +103,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 
 		By("creating a new Docker session for testing")
 		sess := Successful(morbyd.NewSession(ctx,
-			session.WithAutoCleaning("test.turtlefinder=detector/containerd")))
+			session.WithAutoCleaning("test.turtlefinder=stacker")))
 		DeferCleanup(func(ctx context.Context) {
 			By("auto-cleaning the session")
 			sess.Close(ctx)
@@ -128,11 +128,11 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 		//   --volume /lib/modules:/lib/modules:ro
 		//   kindisch-...
 		Expect(sess.BuildImage(ctx, "./detector/containerd/_test/kindisch",
-			build.WithTag(img.Name),
+			build.WithTag(kindischImageName),
 			build.WithBuildArg("KINDEST_BASE_TAG="+test.KindestBaseImageTag),
 			build.WithOutput(timestamper.New(GinkgoWriter)))).
 			Error().NotTo(HaveOccurred())
-		providerCntr := Successful(sess.Run(ctx, img.Name,
+		providerCntr := Successful(sess.Run(ctx, kindischImageName,
 			run.WithName(kindischName),
 			run.WithAutoRemove(),
 			run.WithPrivileged(),
@@ -187,6 +187,7 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 			exec.WithCombinedOutput(timestamper.New(GinkgoWriter))))
 		Expect(ctr.Wait(ctx)).To(BeZero())
 
+		var canary *model.Container
 		Eventually(func() model.Containers {
 			return discover().Containers
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
@@ -195,23 +196,27 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 					HaveContainerNameID(testNamespace+"/"+testContainerName),
 					WithTransform(
 						func(actual *model.Container) model.Labels { return actual.Labels },
-						HaveKeyWithValue(TurtlefinderContainerPrefixLabelName, kindischName)))))
+						HaveKeyWithValue(TurtlefinderContainerPrefixLabelName, kindischName))),
+				&canary))
+		stackedEnginePID := canary.Engine.PID
+		Expect(stackedEnginePID).NotTo(BeZero())
 
 		By("stopping the containerized container engine")
 		providerCntr.Kill(ctx)
 
 		By("waiting for the containerized containerd engine to vanish")
+		// Engines of other concurrently running test suites may come and go,
+		// so only check for our stacked engine (containerd and CRI) to vanish.
 		Eventually(ctx, func() []*model.ContainerEngine {
 			_ = discover()
-			engines := slices.DeleteFunc(finder.Engines(ctx), isStackerTestEngineTyp)
-			slices.SortFunc(engines, func(a, b *model.ContainerEngine) int {
-				return strings.Compare(a.Type, b.Type)
-			})
-			return engines
+			return slices.DeleteFunc(finder.Engines(ctx), isStackerTestEngineTyp)
 		}).Within(10 * time.Second).ProbeEvery(250 * time.Millisecond).
-			Should(HaveExactElements(
-				HaveField("Type", containerd.Type), // ...only one left
-				HaveField("Type", moby.Type),
+			Should(SatisfyAll(
+				Not(ContainElement(HaveField("PID", stackedEnginePID))),
+				ContainElements(
+					HaveField("Type", containerd.Type),
+					HaveField("Type", moby.Type),
+				),
 			))
 	})
 

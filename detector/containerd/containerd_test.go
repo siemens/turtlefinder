@@ -19,7 +19,6 @@ import (
 	"github.com/thediveo/morbyd/v2/run"
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
-	"github.com/thediveo/whalewatcher/v2/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/v2/test"
 
 	detect "github.com/siemens/turtlefinder/v2/detector"
@@ -33,7 +32,8 @@ import (
 )
 
 const (
-	kindischName = "turtlefinder-containerd"
+	kindischName      = "turtlefinder-containerd"
+	kindischImageName = "siemens/turtlefinder-kindisch-containerd"
 
 	testNamespace     = "testing"
 	testContainerName = "canary"
@@ -84,11 +84,11 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 		//   --volume /lib/modules:/lib/modules:ro
 		//   kindisch-...
 		Expect(sess.BuildImage(ctx, "./_test/kindisch",
-			build.WithTag(img.Name),
+			build.WithTag(kindischImageName),
 			build.WithBuildArg("KINDEST_BASE_TAG="+test.KindestBaseImageTag),
 			build.WithOutput(timestamper.New(GinkgoWriter)))).
 			Error().NotTo(HaveOccurred())
-		providerCntr = Successful(sess.Run(ctx, img.Name,
+		providerCntr = Successful(sess.Run(ctx, kindischImageName,
 			run.WithName(kindischName),
 			run.WithAutoRemove(),
 			run.WithPrivileged(),

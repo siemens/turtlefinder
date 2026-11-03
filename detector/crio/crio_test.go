@@ -20,7 +20,6 @@ import (
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
 	criengine "github.com/thediveo/whalewatcher/v2/engineclient/cri"
-	"github.com/thediveo/whalewatcher/v2/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/v2/test"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -35,7 +34,8 @@ import (
 )
 
 const (
-	kindischName = "turtlefinder-crio"
+	kindischName      = "turtlefinder-crio"
+	kindischImageName = "siemens/turtlefinder-kindisch-crio"
 
 	k8sTestNamespace = "tfcritest"
 	k8sTestPodName   = "wwcritestpod"
@@ -88,11 +88,11 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 		//   --volume /lib/modules:/lib/modules:ro
 		//   kindisch-...
 		Expect(sess.BuildImage(ctx, "./_test/kindisch",
-			build.WithTag(img.Name),
+			build.WithTag(kindischImageName),
 			build.WithBuildArg("KINDEST_BASE_TAG="+test.KindestBaseImageTag),
 			build.WithOutput(timestamper.New(GinkgoWriter)))).
 			Error().NotTo(HaveOccurred())
-		providerCntr = Successful(sess.Run(ctx, img.Name,
+		providerCntr = Successful(sess.Run(ctx, kindischImageName,
 			run.WithName(kindischName),
 			run.WithAutoRemove(),
 			run.WithPrivileged(),

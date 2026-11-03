@@ -80,11 +80,12 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		By("spinning off a Docker watcher and waiting for it to become ready")
 		var wg sync.WaitGroup
 		wch := make(chan watcher.Watcher, 1)
-		s.activateAndWatch(newapis, &wg, func(w watcher.Watcher, err error) {
+		s.activateAndWatch(newapis, &wg, func(ctx context.Context, w watcher.Watcher, err error) {
 			defer GinkgoRecover()
 			defer close(wch)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(w).NotTo(BeNil())
+			_ = NewEngine(ctx, w, 0)
 			wch <- w
 		})
 		done := make(chan struct{})
@@ -95,7 +96,7 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		Eventually(done).Within(sockactivatorSyncWait).ProbeEvery(100 * time.Millisecond).
 			Should(BeClosed())
 		var w watcher.Watcher
-		Eventually(wch).Should(Receive(&w), "no watcher created")
+		Expect(wch).To(Receive(&w), "watcher must be handed over before wait group is done")
 		Expect(w).NotTo(BeNil(), "no watcher created")
 		Eventually(w.Ready).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
 			Should(BeClosed())
@@ -120,11 +121,12 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 			&model.Process{PID: 1},
 			sockactivatorSyncWait,
 			func() context.Context { return ctx },
-			func(w watcher.Watcher, pid model.PIDType) {
+			func(ctx context.Context, w watcher.Watcher, pid model.PIDType) {
 				defer GinkgoRecover()
 				defer close(wch)
 				Expect(w).NotTo(BeNil())
 				Expect(pid).NotTo(BeZero())
+				_ = NewEngine(ctx, w, 0)
 				wch <- w
 			},
 		)
@@ -140,7 +142,7 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		Eventually(done).Within(sockactivatorSyncWait).ProbeEvery(100 * time.Millisecond).
 			Should(BeClosed())
 		var w watcher.Watcher
-		Eventually(wch).Should(Receive(&w), "no watcher created")
+		Expect(wch).To(Receive(&w), "watcher must be handed over before wait group is done")
 		Expect(w).NotTo(BeNil(), "no watcher created")
 		Eventually(w.Ready).Within(2 * time.Second).ProbeEvery(250 * time.Millisecond).
 			Should(BeClosed())

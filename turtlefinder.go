@@ -433,11 +433,11 @@ NextProcess:
 			enginectx := f.contexter()
 			for _, w := range engineproc.engine.detector.NewWatchers(enginectx, engineproc.proc.PID, apisox) {
 				// We've got a new watcher! Or two... *snicker* ...so many demons!
-				startWatch(enginectx, w, f.initialsyncwait)
 				eng := NewEngine(enginectx, w, engineproc.proc.PPID)
 				f.mux.Lock()
 				f.engines[engineproc.proc.PID] = append(f.engines[engineproc.proc.PID], eng)
 				f.mux.Unlock()
+				awaitSync(enginectx, w, f.initialsyncwait)
 			}
 		}(engineproc)
 	}
@@ -468,11 +468,7 @@ NextProcess:
 		f.activators[activatorproc.PID] = newSocketActivator(activatorproc,
 			f.initialsyncwait,
 			f.contexter,
-			func(w watcher.Watcher, pid model.PIDType) {
-				// As this comes in from a different "background" go routine, we
-				// need to make sure that we're not trashing our engine map.
-				f.mux.Lock()
-				defer f.mux.Unlock()
+			func(ctx context.Context, w watcher.Watcher, pid model.PIDType) {
 				// Freshly socket-activated engines won't yet be in the process
 				// tree we're working on. In order to allow downstream users of
 				// turtlefinders – lxkns in particular – to still do correct
@@ -484,9 +480,12 @@ NextProcess:
 				if engproc := model.NewProcess(pid, false); engproc != nil {
 					ppidhint = engproc.PPID
 				}
-				f.engines[pid] = []*Engine{
-					NewEngine(f.contexter(), w, ppidhint),
-				}
+				eng := NewEngine(ctx, w, ppidhint)
+				// As this comes in from a different "background" go routine, we
+				// need to make sure that we're not trashing our engine map.
+				f.mux.Lock()
+				defer f.mux.Unlock()
+				f.engines[pid] = []*Engine{eng}
 			},
 		)
 	}

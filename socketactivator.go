@@ -5,6 +5,7 @@
 package turtlefinder
 
 import (
+	"context"
 	"log/slog"
 	"slices"
 	"strconv"
@@ -35,11 +36,11 @@ import (
 // engines, using Engine objects and removing them when the watch ends when the
 // engine process terminates (which it normally shouldn't).
 type socketActivatorProcess struct {
-	proc                 *model.Process                             // activator process.
-	demonDetectorPlugins []*demonFinderPlugin                       // static list of socket-activated engine plugins.
-	initialsyncwait      time.Duration                              // max. wait for engine watch coming online (sync) before proceeding.
-	contexter            Contexter                                  // contexts for workload watching.
-	createdWatcherFn     func(w watcher.Watcher, pid model.PIDType) // callback for newly created engine workload watchers
+	proc                 *model.Process                                                  // activator process.
+	demonDetectorPlugins []*demonFinderPlugin                                            // static list of socket-activated engine plugins.
+	initialsyncwait      time.Duration                                                   // max. wait for engine watch coming online (sync) before proceeding.
+	contexter            Contexter                                                       // contexts for workload watching.
+	createdWatcherFn     func(ctx context.Context, w watcher.Watcher, pid model.PIDType) // callback for newly created engine workload watchers; must start watching
 
 	mu       sync.Mutex          // protects the following fields
 	hash     uint64              // xxhash over socket fds to detect reconfigurations.
@@ -66,7 +67,7 @@ func newSocketActivator(
 	proc *model.Process,
 	initialsyncwait time.Duration,
 	contexter Contexter,
-	createdWatcherFn func(w watcher.Watcher, pid model.PIDType),
+	createdWatcherFn func(ctx context.Context, w watcher.Watcher, pid model.PIDType),
 ) *socketActivatorProcess {
 	// If not done so yet, build a list of demon detectors for detecting
 	// container engine processes based not only on their process name, but also
@@ -127,11 +128,11 @@ func (s *socketActivatorProcess) update(wg *sync.WaitGroup) {
 	s.activateAndWatch(
 		newapis,
 		wg,
-		func(w watcher.Watcher, err error) {
-			if err != nil || s.createdWatcherFn == nil {
+		func(ctx context.Context, w watcher.Watcher, err error) {
+			if err != nil {
 				return
 			}
-			s.createdWatcherFn(w, model.PIDType(w.PID()))
+			s.createdWatcherFn(ctx, w, model.PIDType(w.PID()))
 		},
 	)
 }
@@ -207,7 +208,7 @@ func (s *socketActivatorProcess) discoverAPIPaths(rawsocketfds []rawSocketFd, ha
 func (s *socketActivatorProcess) activateAndWatch(
 	apis socketPathsByIno,
 	wg *sync.WaitGroup,
-	outcomefn func(w watcher.Watcher, err error),
+	outcomefn func(ctx context.Context, w watcher.Watcher, err error),
 ) {
 	// Note: the API endpoint paths are relative to the mount namespace of this
 	// socket activator. In order to always correctly access them even when

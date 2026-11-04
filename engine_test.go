@@ -50,8 +50,7 @@ var _ = Describe("container engine", Serial, Ordered, func() {
 	})
 
 	BeforeEach(func() {
-		oldDefault := slog.Default()
-		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		DeferCleanup(slog.SetDefault, slog.Default())
 		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 

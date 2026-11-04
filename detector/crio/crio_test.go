@@ -129,8 +129,7 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 	})
 
 	It("tries unsuccessfully", NodeTimeout(30*time.Second), func(ctx context.Context) {
-		oldDefault := slog.Default()
-		defer slog.SetDefault(oldDefault)
+		defer slog.SetDefault(slog.Default())
 		slogout := testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 		d := &Detector{}
 		Expect(d.NewWatchers(ctx, 0, []string{"/etc/rumpelpumpel"})).To(BeEmpty())

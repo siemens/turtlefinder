@@ -17,7 +17,7 @@ var _ = Describe("capturing structured logging in tests", func() {
 
 	It("captures the log into a safe buffer", func() {
 		oldDefault := slog.Default()
-		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		DeferCleanup(slog.SetDefault, oldDefault)
 		b := SetDefault(slog.LevelDebug, nil)
 		Expect(b).NotTo(BeNil())
 		Expect(slog.Default()).NotTo(BeIdenticalTo(oldDefault))
@@ -28,8 +28,7 @@ var _ = Describe("capturing structured logging in tests", func() {
 	})
 
 	It("duplicates the log into an additional writer", func() {
-		oldDefault := slog.Default()
-		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		DeferCleanup(slog.SetDefault, slog.Default())
 
 		var repl safe.Buffer
 		b := SetDefault(slog.LevelDebug, &repl)

@@ -43,8 +43,7 @@ var _ = Describe("watch", Serial, func() {
 	var slogout fmt.Stringer
 
 	BeforeEach(func() {
-		oldDefault := slog.Default()
-		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		DeferCleanup(slog.SetDefault, slog.Default())
 		slogout = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 

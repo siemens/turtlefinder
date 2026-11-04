@@ -126,8 +126,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		oldDefault := slog.Default()
-		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		DeferCleanup(slog.SetDefault, slog.Default())
 		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 

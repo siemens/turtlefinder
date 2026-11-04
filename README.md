@@ -65,19 +65,20 @@ over. So this is, what the first parameter to `New` is.
 
 For further options, please refer to the module documentation.
 
-## Project Structure
+## Edgeshark Project
 
-The "Edgeshark" project consist of several repositories:
-- [Edgeshark Hub repository](https://github.com/siemens/edgeshark)
-- [G(h)ostwire discovery service](https://github.com/siemens/ghostwire)
+The turtlefinder module is part of the "Edgeshark" project that consist of
+several repositories:
+- [Edgeshark Hub repository](https://github.com/siemens/edgeshark) with
+  Edgeshark Industrial Edge App.
+- [Ghostwire discovery service](https://github.com/siemens/ghostwire)
 - [Packetflix packet streaming service](https://github.com/siemens/packetflix)
 - [Containershark Extcap plugin for
   Wireshark](https://github.com/siemens/cshargextcap)
-- support modules:
-  - 🖝 **Turtlefinder** 🖜
-  - [csharg (CLI)](https://github.com/siemens/csharg)
-  - [mobydig](https://github.com/siemens/mobydig)
-  - [ieddata](https://github.com/siemens/ieddata)
+- **Turtlefinder**
+- [csharg (CLI)](https://github.com/siemens/csharg)
+- [mobydig](https://github.com/siemens/mobydig)
+- [ieddata](https://github.com/siemens/ieddata)
 
 ## Mode of Operation
 

@@ -1,3 +1,5 @@
+<img align="right" width="150" height="150" src="_media/turtlefinder-150x150.png" style="padding: 0 0 1ex 0.8em">
+
 [![Siemens](https://img.shields.io/badge/github-siemens-009999?logo=github)](https://github.com/siemens)
 [![Industrial Edge](https://img.shields.io/badge/github-industrial%20edge-e39537?logo=github)](https://github.com/industrial-edge)
 [![Edgeshark](https://img.shields.io/badge/github-Edgeshark-003751?logo=github)](https://github.com/siemens/edgeshark)

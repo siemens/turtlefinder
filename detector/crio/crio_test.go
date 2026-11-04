@@ -24,6 +24,7 @@ import (
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	detect "github.com/siemens/turtlefinder/v2/detector"
+	"github.com/siemens/turtlefinder/v2/internal/testimg"
 	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -39,6 +40,9 @@ const (
 
 	k8sTestNamespace = "tfcritest"
 	k8sTestPodName   = "wwcritestpod"
+
+	canaryImageRef = "docker.io/library/busybox:latest"
+	pauseImageRef  = "registry.k8s.io/pause:3.10.1" // must match _test/kindisch/files/etc/crio/crio.conf
 
 	goroutinesUnwindTimeout = 2 * time.Second
 	goroutinesUnwindPolling = 250 * time.Millisecond
@@ -136,7 +140,7 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 		Expect(slogout.String()).To(ContainSubstring("no working CRI-O API endpoint found"))
 	})
 
-	It("watches successfully", NodeTimeout(30*time.Second), func(ctx context.Context) {
+	It("watches successfully", NodeTimeout(60*time.Second), func(ctx context.Context) {
 		var cricl *criengine.Client
 
 		By("waiting for the CRI-O API to become responsive")
@@ -163,6 +167,15 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 				Should(Succeed())
 		})
 
+		By("loading the pause and canary images from the Docker engine into CRI-O")
+		for _, imgref := range []string{pauseImageRef, canaryImageRef} {
+			// skopeo 1.9 cannot read docker-archives from pipes, only from files.
+			Expect(testimg.Load(ctx, providerCntr, imgref, timestamper.New(GinkgoWriter),
+				"sh", "-c", `f=$(mktemp) && cat >"$f" && skopeo copy "docker-archive:$f" "containers-storage:$0"; rc=$?; rm -f "$f"; exit $rc`,
+				imgref)).
+				To(Succeed())
+		}
+
 		By("creating a new pod")
 		podconfig := &runtime.PodSandboxConfig{
 			Metadata: &runtime.PodSandboxMetadata{
@@ -181,13 +194,6 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 			})).Error().NotTo(HaveOccurred())
 		}()
 
-		By("pulling the required canary image")
-		Expect(cricl.ImageService().PullImage(ctx, &runtime.PullImageRequest{
-			Image: &runtime.ImageSpec{
-				Image: "busybox:stable",
-			},
-		})).Error().NotTo(HaveOccurred())
-
 		By("creating a container inside the pod")
 		podcntr := Successful(cricl.RuntimeService().CreateContainer(ctx, &runtime.CreateContainerRequest{
 			PodSandboxId: podsbox.PodSandboxId,
@@ -196,7 +202,8 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 					Name: "hellorld",
 				},
 				Image: &runtime.ImageSpec{
-					Image: "busybox:stable",
+					Image:              canaryImageRef,
+					UserSpecifiedImage: canaryImageRef,
 				},
 				Command: []string{
 					"/bin/sh",

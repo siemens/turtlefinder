@@ -60,6 +60,7 @@ var _ = Describe("turtle finder engine lifecycle", Serial, func() {
 		Expect(tf.register(42, NewEngine(ctx, Successful(moby.New("unix:///run/docker.sock", nil)), 0))).To(BeTrue())
 		Expect(tf.register(42, NewEngine(ctx, Successful(moby.New("unix:///run/docker.sock", nil)), 0))).To(BeTrue())
 		Expect(tf.Engines(ctx)).To(HaveLen(2))
+		Expect(tf.EngineCount()).To(Equal(2))
 	})
 
 	It("keeps failed engines registered but unused until their engine process has gone", func(ctx context.Context) {

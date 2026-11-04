@@ -30,6 +30,7 @@ var _ = Describe("finding socket-activated demons", Serial, Ordered, func() {
 			Expect(processStatusMatch(statline, name, ppidtext)).To(Equal(expected))
 		},
 		Entry("empty stat line", "", "duhkr", "1", false),
+		Entry("truncated after PID", "42 ", "duhkr", "1", false),
 		Entry("invalid comm field", "42 (duhkr", "duhkr", "1", false),
 		Entry("not our name", "42 (foobar)", "duhkr", "1", false),
 		Entry("no PPID", "42 (duhkr)", "duhkr", "1", false),

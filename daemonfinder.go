@@ -106,6 +106,9 @@ func processStatusMatch(statline string, name string, ppidtext string) bool {
 	// bracket (note that process names may contain closing brackets
 	// themselves, fwiw)...
 	idx += 2
+	if idx > len(statline) {
+		return false
+	}
 	lastidx := strings.LastIndex(statline[idx:], ")")
 	if lastidx < 0 {
 		return false

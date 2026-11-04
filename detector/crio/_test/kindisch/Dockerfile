@@ -3,22 +3,20 @@ ARG KINDEST_BASE_TAG
 
 FROM kindest/base:${KINDEST_BASE_TAG}
 
-# add cri-o to the mix (that is, containerd)
-RUN OS=Debian_11 && VERSION=1.28 \
+# Stable CRI-O release stream, see https://github.com/cri-o/packaging.
+ARG CRIO_VERSION=v1.37
+
+# Add CRI-O to the mix (that is, containerd), as well as skopeo for loading
+# images into CRI-O's image storage without registry access.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gnupg skopeo \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://download.opensuse.org/repositories/isv:/cri-o:/stable:/${CRIO_VERSION}/deb/Release.key \
+        | gpg --batch --yes --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://download.opensuse.org/repositories/isv:/cri-o:/stable:/${CRIO_VERSION}/deb/ /" \
+        > /etc/apt/sources.list.d/cri-o.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends gnupg \
-    && echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" \
-        > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
-    && echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /" \
-        > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list \
-    && mkdir -p /usr/share/keyrings \
-    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key  \
-        | gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg \
-    && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/Release.key \
-        | gpg --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg \
-    && apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y -o Dpkg::Options::="--force-confold" cri-o cri-o-runc \
+    && apt-get install -y -o Dpkg::Options::="--force-confold" cri-o \
     && systemctl enable crio \
     && systemctl mask systemd-logind.service getty.service getty.target \
     && apt-get clean -y \

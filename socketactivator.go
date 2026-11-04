@@ -114,6 +114,9 @@ func newSocketActivator(
 // the end of the time box, even if some workload synchronization might still be
 // ongoing in the background. This is on purpose in order to not stall
 // discoveries for too long in face of newly discovered container engines.
+//
+// By design, an API endpoint that failed to activate isn't retried as long as
+// the set of sockets of this socket activator stays the same.
 func (s *socketActivatorProcess) update(wg *sync.WaitGroup) {
 	rawsox, hash, err := s.rawSocketFdsWithHash()
 	if err != nil {

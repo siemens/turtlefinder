@@ -51,7 +51,7 @@ func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *
 		Watcher:  w,
 		ID:       w.ID(idctx),
 		Version:  w.Version(idctx),
-		Done:     make(chan struct{}, 1), // might never be picked up in some situations
+		Done:     make(chan struct{}),
 		PPIDHint: ppidhint,
 	}
 	cancel() // ensure to quickly release cancel, silence linter

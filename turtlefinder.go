@@ -20,6 +20,7 @@ import (
 	"github.com/thediveo/lxkns/containerizer"
 	"github.com/thediveo/lxkns/model"
 	"github.com/thediveo/nonstd/sets"
+	"github.com/thediveo/nonstd/xslog"
 	"github.com/thediveo/procfsroot"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"golang.org/x/sync/semaphore"
@@ -72,8 +73,8 @@ type TurtleFinder struct {
 	activators map[model.PIDType]*socketActivatorProcess // socket activators we've found.
 }
 
-// TurtleFinder implements the lxkns Containerizer and Oversseer interfaces. And it's also an
-// Overseer.
+// TurtleFinder implements the lxkns Containerizer and Overseer interfaces, as
+// well as our own Overseer interface.
 var _ containerizer.Overseer = (*TurtleFinder)(nil)
 var _ Overseer = (*TurtleFinder)(nil)
 
@@ -192,9 +193,15 @@ func (f *TurtleFinder) EnginesInclContainers(
 	engineWorkloadCh := make(chan *model.ContainerEngine, len(allEngines))
 	var theendisnear atomic.Int64 // track amount of engine results
 	theendisnear.Add(int64(len(allEngines)))
-	for _, engine := range allEngines {
+	for idx, engine := range allEngines {
 		if err := f.workersem.Acquire(ctx, 1); err != nil {
-			return []*model.ContainerEngine{}
+			// Skip the remaining engines, but still return the workloads of the
+			// engines already being consulted.
+			if theendisnear.Add(int64(idx-len(allEngines))) == 0 {
+				close(engineWorkloadCh)
+			}
+			allEngines = allEngines[:idx]
+			break
 		}
 		go func(engine *Engine) {
 			defer f.workersem.Release(1)
@@ -283,12 +290,8 @@ func (f *TurtleFinder) Engines(context.Context) []*model.ContainerEngine {
 	allEngines := make([]*model.ContainerEngine, 0, len(f.engines))
 	for _, engines := range f.engines {
 		for _, engine := range engines {
-			select {
-			case <-engine.Done:
-				continue // already Done, so ignore this engine.
-			default:
-				// not Done, so let's move on and add it to the list of available
-				// engines.
+			if !engine.IsAlive() {
+				continue
 			}
 			allEngines = append(allEngines, &model.ContainerEngine{
 				ID:      engine.ID,
@@ -302,13 +305,20 @@ func (f *TurtleFinder) Engines(context.Context) []*model.ContainerEngine {
 	return allEngines
 }
 
-// EngineCount returns the number of container engines currently under watch.
-// Callers might want to use the Engines method instead as EngineCount bases on
-// it (because we don't store an explicit engine count anywhere).
+// EngineCount returns the number of container engines currently under watch,
+// that is, the number of engines [TurtleFinder.Engines] returns.
 func (f *TurtleFinder) EngineCount() int {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	return len(f.engines)
+	count := 0
+	for _, engines := range f.engines {
+		for _, engine := range engines {
+			if engine.IsAlive() {
+				count++
+			}
+		}
+	}
+	return count
 }
 
 // prune terminated watchers of engine processes that have gone, as well as
@@ -450,14 +460,18 @@ NextProcess:
 			for idx, apipath := range apisox {
 				wormhole := "/proc/" + strconv.FormatUint(uint64(engineproc.proc.PID), 10) +
 					"/root"
-				apipath, err := procfsroot.EvalSymlinks(apipath, wormhole, procfsroot.EvalFullPath)
+				evalpath, err := procfsroot.EvalSymlinks(apipath, wormhole, procfsroot.EvalFullPath)
 				if err != nil {
 					slog.Warn("invalid API endpoint",
-						slog.String("api", apipath), slog.String("context", wormhole))
+						slog.String("api", apipath), slog.String("context", wormhole), xslog.Error(err))
 					apisox[idx] = ""
 					continue
 				}
-				apisox[idx] = wormhole + apipath
+				apisox[idx] = wormhole + evalpath
+			}
+			apisox = slices.DeleteFunc(apisox, func(apipath string) bool { return apipath == "" })
+			if len(apisox) == 0 {
+				return
 			}
 			// Ask the contexter to give us a long-living engine workload
 			// watching context; just using the background context (or even a

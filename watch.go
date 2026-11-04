@@ -101,10 +101,9 @@ func activateAndStartWatch(
 	outcomefn func(ctx context.Context, w watcher.Watcher, err error),
 	maxwait time.Duration,
 ) {
-	// Use a buffered channel, as our consumer go routine might have already
-	// moved on by the time we've through all the motions to activate the engine
-	// and connect a watcher to it.
-	synched := make(chan struct{}, 1)
+	// Closed when activating, contacting, and synchronizing has finished, one
+	// way or another.
+	synched := make(chan struct{})
 
 	go func() {
 		// Ensure to notify the time-boxed "outer" go routine of any outcome of

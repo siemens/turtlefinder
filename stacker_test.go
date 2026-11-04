@@ -26,6 +26,7 @@ import (
 	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
 
+	"github.com/siemens/turtlefinder/v2/internal/testimg"
 	"github.com/siemens/turtlefinder/v2/internal/testslog"
 	. "github.com/siemens/turtlefinder/v2/matcher"
 
@@ -168,16 +169,12 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 				HaveField("Type", cri.Type),
 			))
 
-		By("pulling a busybox image (if necessary)")
-		ctr := Successful(providerCntr.Exec(ctx,
-			exec.Command("ctr",
-				"-n", testNamespace,
-				"image", "pull", testImageRef),
-			exec.WithCombinedOutput(timestamper.New(GinkgoWriter))))
-		Expect(ctr.Wait(ctx)).To(BeZero())
+		By("loading a busybox image from the Docker engine into containerd")
+		Expect(testimg.Load(ctx, providerCntr, testImageRef, timestamper.New(GinkgoWriter),
+			"ctr", "-n", testNamespace, "image", "import", "-")).To(Succeed())
 
 		By("creating a new container+task and starting it")
-		ctr = Successful(providerCntr.Exec(ctx,
+		ctr := Successful(providerCntr.Exec(ctx,
 			exec.Command("ctr",
 				"-n", testNamespace,
 				"run", "-d",

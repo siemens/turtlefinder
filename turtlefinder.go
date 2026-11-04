@@ -7,6 +7,7 @@ package turtlefinder
 import (
 	"context"
 	"log/slog"
+	"maps"
 	"runtime"
 	"slices"
 	"strconv"
@@ -489,6 +490,7 @@ NextProcess:
 			},
 		)
 	}
+	activators := slices.Collect(maps.Values(f.activators))
 	f.mux.Unlock()
 	// Now iterate over all the socket activators currently known and tell them
 	// to update: the activators are responsible for discovering (new)
@@ -496,7 +498,7 @@ NextProcess:
 	// the more complex activation and discovery mechanism. New watchers are
 	// then reported via the createdWatcherFn callback function registered above
 	// when we created new socket activator (proxy) objects.
-	for _, activator := range f.activators {
+	for _, activator := range activators {
 		activator.update(wg)
 	}
 }

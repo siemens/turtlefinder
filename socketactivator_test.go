@@ -151,4 +151,31 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		w.Close()
 	})
 
+	It("doesn't race on activators while updating and pruning", func(ctx context.Context) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		tf := New(func() context.Context { return ctx })
+		defer tf.Close()
+
+		// PID beyond the kernel's PID_MAX_LIMIT, so it can never exist.
+		const fakePID = model.PIDType(1<<22 + 42)
+		fakeproc := &model.Process{PID: fakePID}
+		fakeproc.Name = "systemd"
+		procs := model.ProcessTable{fakePID: fakeproc}
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			for range 100 {
+				tf.prune(model.ProcessTable{})
+			}
+		}()
+		var wg sync.WaitGroup
+		for range 100 {
+			tf.updateActivators(procs, &wg)
+		}
+		wg.Wait()
+		Eventually(done).Should(BeClosed())
+	})
+
 })

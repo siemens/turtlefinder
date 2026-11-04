@@ -59,6 +59,10 @@ EOF
     "systemd-remount-fs.service"
     "dev-hugepages.mount"
     "sys-fs-fuse-connections.mount"
+    # binfmt_misc is kernel-wide; touching it would break e.g. WSLInterop on the host.
+    "systemd-binfmt.service"
+    "proc-sys-fs-binfmt_misc.automount"
+    "proc-sys-fs-binfmt_misc.mount"
   )
 
   for unit in "${units[@]}"; do

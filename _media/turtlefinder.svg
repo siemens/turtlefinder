@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
   <defs>
+    <linearGradient id="fall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B3E0E0"/><stop offset="1" stop-color="#B3E0E0" stop-opacity="0"/></linearGradient>
+    <clipPath id="sea" clipPathUnits="userSpaceOnUse"><rect x="0" y="-120" width="300" height="142"/></clipPath>
     <g id="ele">
       <rect x="0" y="6" width="30" height="18" rx="9" fill="currentColor"/>
       <rect x="3" y="16" width="7" height="16" rx="3" fill="currentColor"/>
@@ -9,34 +11,53 @@
       <ellipse cx="28" cy="11" rx="5" ry="7" fill="#000" opacity=".12"/>
       <circle cx="35" cy="8" r="1.6" fill="#00303A"/>
     </g>
-    <g id="world">
-      <polygon points="42,134 18,146 44,146" fill="#33AFAF"/>
-      <ellipse cx="70" cy="156" rx="28" ry="8" transform="rotate(-28 70 156)" fill="#33AFAF"/>
-      <ellipse cx="232" cy="158" rx="36" ry="10" transform="rotate(28 232 158)" fill="#33AFAF"/>
-      <ellipse cx="258" cy="133" rx="20" ry="11" fill="#4DBDBD"/>
-      <ellipse cx="280" cy="128" rx="24" ry="17" fill="#4DBDBD"/>
-      <circle cx="288" cy="123" r="4.5" fill="#fff"/><circle cx="289" cy="124" r="2.2" fill="#00303A"/>
-      <path d="M283.5 123 A4.5 4.5 0 0 1 292.5 123 Z" fill="#33AFAF"/>
-      <path d="M40 140 Q40 60 150 60 Q260 60 260 140 Z" fill="#009999"/>
-      <g fill="#00B3AD"><ellipse cx="150" cy="98" rx="26" ry="18"/><ellipse cx="96" cy="112" rx="18" ry="15"/><ellipse cx="204" cy="112" rx="18" ry="15"/></g>
-      <rect x="36" y="132" width="228" height="12" rx="6" fill="#00747A"/>
-      <use href="#ele" transform="translate(148,28) scale(-1,1)" style="color:#80CCCC"/>
-      <use href="#ele" transform="translate(152,28)" style="color:#80CCCC"/>
-      <use href="#ele" transform="translate(115,36) scale(-1,1)" style="color:#B3E0E0"/>
-      <use href="#ele" transform="translate(185,36)" style="color:#B3E0E0"/>
-      <ellipse cx="150" cy="30" rx="110" ry="10" fill="#00B3AD"/>
-      <ellipse cx="150" cy="26" rx="110" ry="10" fill="#E6F5F5"/>
+    <g id="streams">
+      <path d="M12 22 C4 34 2 60 6 96 L13 96 C11 64 15 40 22 28 Z"/>
+      <path d="M24 29 C18 44 17 64 20 86 L25 86 C24 66 27 46 33 32 Z"/>
+      <path d="M37 33 C33 44 33 56 35 70 L39 70 C38 58 40 46 44 34 Z"/>
     </g>
   </defs>
   <circle cx="200" cy="200" r="185" fill="#00161C"/>
   <g fill="#CCEBEB"><circle cx="90" cy="95" r="2"/><circle cx="300" cy="80" r="2.5"/><circle cx="330" cy="150" r="1.5"/><circle cx="70" cy="200" r="1.5"/><circle cx="120" cy="320" r="2"/><circle cx="290" cy="330" r="1.5"/><circle cx="200" cy="50" r="1.5"/><circle cx="318" cy="318" r="2"/><circle cx="160" cy="60" r="1"/><circle cx="250" cy="360" r="1"/></g>
   <g transform="translate(47,152.5) scale(.95)">
-    <use href="#world"/>
-    <g transform="translate(150,31) scale(1.85) translate(-150,-43)">
-      <path d="M121 18 Q108 14 104 1 Q113 8 119 5 Q117 12 125 16 Z" fill="#2496ED"/>
-      <path d="M118 16 L183 16 Q187 30 170 37 Q150 43 130 37 Q118 31 118 16 Z" fill="#2496ED"/>
-      <circle cx="171" cy="24" r="2" fill="#fff"/>
-      <g fill="#2496ED"><rect x="127" y="6.5" width="8" height="8"/><rect x="136.5" y="6.5" width="8" height="8"/><rect x="146" y="6.5" width="8" height="8"/><rect x="155.5" y="6.5" width="8" height="8"/><rect x="165" y="6.5" width="8" height="8"/><rect x="136.5" y="-3" width="8" height="8"/><rect x="146" y="-3" width="8" height="8"/><rect x="155.5" y="-3" width="8" height="8"/><rect x="155.5" y="-12.5" width="8" height="8"/></g>
-    </g>
+    <!-- Great A'Tuin -->
+    <polygon points="42,134 18,146 44,146" fill="#33AFAF"/>
+    <ellipse cx="70" cy="156" rx="28" ry="8" transform="rotate(-28 70 156)" fill="#33AFAF"/>
+    <ellipse cx="232" cy="158" rx="36" ry="10" transform="rotate(28 232 158)" fill="#33AFAF"/>
+    <ellipse cx="258" cy="133" rx="20" ry="11" fill="#4DBDBD"/>
+    <ellipse cx="280" cy="128" rx="24" ry="17" fill="#4DBDBD"/>
+    <circle cx="288" cy="123" r="4.5" fill="#fff"/><circle cx="289" cy="124" r="2.2" fill="#00303A"/>
+    <path d="M283.5 123 A4.5 4.5 0 0 1 292.5 123 Z" fill="#33AFAF"/>
+    <path d="M40 140 Q40 60 150 60 Q260 60 260 140 Z" fill="#009999"/>
+    <g fill="#00B3AD"><ellipse cx="150" cy="98" rx="26" ry="18"/><ellipse cx="96" cy="112" rx="18" ry="15"/><ellipse cx="204" cy="112" rx="18" ry="15"/></g>
+    <rect x="36" y="132" width="228" height="12" rx="6" fill="#00747A"/>
+    <!-- elephants -->
+    <use href="#ele" transform="translate(148,28) scale(-1,1)" style="color:#80CCCC"/>
+    <use href="#ele" transform="translate(152,28)" style="color:#80CCCC"/>
+    <use href="#ele" transform="translate(115,36) scale(-1,1)" style="color:#B3E0E0"/>
+    <use href="#ele" transform="translate(185,36)" style="color:#B3E0E0"/>
+    <!-- the Disc -->
+    <ellipse cx="150" cy="23" rx="138" ry="16" fill="#00646E"/>
+    <g fill="url(#fall)"><use href="#streams"/><use href="#streams" transform="translate(300,0) scale(-1,1)"/></g>
+    <ellipse cx="150" cy="18" rx="138" ry="16" fill="#1C9DB0"/>
+    <ellipse cx="150" cy="17" rx="126" ry="12" fill="#2BAFC0"/>
+    <!-- central island with Cori Celesti -->
+    <ellipse cx="170" cy="15" rx="32" ry="6" fill="#E6F5F5"/>
+    <path d="M142 15 Q147 6 153 3 Q157 1 160 -4 Q164 -15 170 -19 Q176 -15 179 -7 Q181 -3 185 0 Q192 5 198 15 Q170 19 142 15 Z" fill="#00747A"/>
+    <path d="M170 -19 Q176 -15 179 -7 Q181 -3 185 0 Q192 5 198 15 Q186 17 175 17 Q178 8 174 2 Q177 -6 170 -19 Z" fill="#00525A"/>
+    <path d="M163 -10 Q166 -16 170 -19 Q176 -15 178 -9 Q175 -7 173 -10 Q171 -6 168 -9 Q166 -6 163 -10 Z" fill="#E6F5F5"/>
+    <g fill="#33AFAF"><circle cx="149" cy="13" r="3.5"/><circle cx="154" cy="14" r="2.5"/><circle cx="190" cy="13" r="3"/><circle cx="194" cy="14" r="2.2"/></g>
+    <g fill="none" stroke="#B3E0E0" stroke-width="1.6" stroke-linecap="round"><path d="M212 22 q4 -3 8 0 q4 3 8 0"/><path d="M228 20 q4 -3 8 0 q4 3 8 0"/><path d="M192 26 q4 -3 8 0"/><path d="M252 12 q4 -3 8 0"/></g>
+    <!-- sinking shipping container -->
+    <g clip-path="url(#sea)">
+      <g transform="translate(80,1) rotate(-4) scale(1.0) translate(-54,-16)">
+        <path d="M0 0 L12 -8 L108 -8 L96 0 Z" fill="#5BB3F5"/>
+        <rect x="0" y="0" width="96" height="40" fill="#2496ED"/>
+        <g fill="#1A7BC4"><rect x="6" y="4" width="4" height="32" rx="1"/><rect x="16" y="4" width="4" height="32" rx="1"/><rect x="26" y="4" width="4" height="32" rx="1"/><rect x="36" y="4" width="4" height="32" rx="1"/><rect x="46" y="4" width="4" height="32" rx="1"/><rect x="56" y="4" width="4" height="32" rx="1"/><rect x="66" y="4" width="4" height="32" rx="1"/><rect x="76" y="4" width="4" height="32" rx="1"/><rect x="86" y="4" width="4" height="32" rx="1"/></g>
+        <path d="M96 0 L108 -8 L108 32 L96 40 Z" fill="#1A7BC4"/>
+        <g fill="#5BB3F5"><path d="M100 1 L101.5 0 L101.5 34 L100 35 Z"/><path d="M104 -2 L105.5 -3 L105.5 31 L104 32 Z"/></g>
+        <g fill="#0F5A94"><rect x="0" y="0" width="5" height="4"/><rect x="91" y="0" width="5" height="4"/><rect x="0" y="36" width="5" height="4"/><rect x="91" y="36" width="5" height="4"/></g>
+      </g>
+    </g>    <g fill="none" stroke="#E6F5F5" stroke-width="2" stroke-linecap="round"><path d="M20 23 q6 -4 12 0"/><path d="M128 23 q6 -4 12 0 q6 4 12 0"/><path d="M48 23 q8 -3 16 0 q8 3 16 0 q8 -3 16 0 q8 3 16 0"/></g>
   </g>
 </svg>

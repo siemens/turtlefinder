@@ -100,6 +100,7 @@ var _ = Describe("CRI-O turtle watcher", Ordered, func() {
 			run.WithName(kindischName),
 			run.WithAutoRemove(),
 			run.WithPrivileged(),
+			run.WithNetworkMode("none"), // proves that CRI-O never pulls from registries
 			run.WithSecurityOpt("label=disable"),
 			run.WithCgroupnsMode("private"),
 			run.WithVolume("/var"),

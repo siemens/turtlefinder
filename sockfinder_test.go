@@ -62,6 +62,17 @@ var _ = Describe("socket finder", func() {
 
 	})
 
+	It("returns nothing for a non-existing process", func() {
+		Expect(listeningUDSVisibleToProcess(0)).To(BeNil())
+		Expect(listeningUDSPathsOfProcess(0, socketPathsByIno{})).To(BeNil())
+	})
+
+	It("skips socket fds with invalid inode numbers", func() {
+		Expect(listeningUDSPaths(
+			[]rawSocketFd{{fd: "1", socketino: "abc"}},
+			socketPathsByIno{})).To(BeEmpty())
+	})
+
 	It("finds Docker API unix socket", func() {
 		sox := listeningUDSVisibleToProcess(model.PIDType(os.Getpid()))
 		// when inside devcontainer, the docker features will put the genuine

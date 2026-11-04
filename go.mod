@@ -19,6 +19,7 @@ require (
 	github.com/thediveo/success v1.4.0
 	github.com/thediveo/whalewatcher/v2 v2.1.1
 	golang.org/x/sync v0.24.0
+	google.golang.org/grpc v1.84.0
 	k8s.io/cri-api v0.37.2
 )
 
@@ -109,6 +110,5 @@ require (
 	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5 // indirect
-	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )

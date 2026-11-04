@@ -22,6 +22,7 @@ import (
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
 	"github.com/thediveo/whalewatcher/v2/engineclient/cri"
+	mobyengineclient "github.com/thediveo/whalewatcher/v2/engineclient/moby"
 	"github.com/thediveo/whalewatcher/v2/test"
 	"github.com/thediveo/whalewatcher/v2/watcher/containerd"
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
@@ -61,6 +62,20 @@ var _ = Describe("turtles and elephants", Serial, Ordered, func() {
 	BeforeEach(func() {
 		DeferCleanup(slog.SetDefault, slog.Default())
 		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+	})
+
+	It("aborts stacking on duplicate engines", func() {
+		slogout := testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+		// PID beyond the kernel's PID_MAX_LIMIT, so it can never exist.
+		const fakePID = 1<<22 + 42
+		engines := []*Engine{}
+		for range 2 {
+			w := Successful(moby.New("unix:///run/docker.sock", nil, mobyengineclient.WithPID(fakePID)))
+			DeferCleanup(w.Close)
+			engines = append(engines, &Engine{Watcher: w})
+		}
+		stackEngines(nil, engines, model.ProcessTable{}, nil)
+		Expect(slogout.String()).To(ContainSubstring("aborting turtlefinder engine stacking due to duplicate engine PID"))
 	})
 
 	It("prefixes and stacks turtles and elephants", NodeTimeout(60*time.Second), func(ctx context.Context) {

@@ -8,11 +8,13 @@ import (
 	"context"
 	"net"
 	"os"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/whalewatcher/v2"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -37,6 +39,36 @@ type countingWatcher struct {
 func (c *countingWatcher) Watch(ctx context.Context) error {
 	c.watches.Add(1)
 	return c.Watcher.Watch(ctx)
+}
+
+// idProbingWatcher wraps a watcher.Watcher and closes idcalled on its first ID
+// call.
+type idProbingWatcher struct {
+	watcher.Watcher
+	once     sync.Once
+	idcalled chan struct{}
+}
+
+func (p *idProbingWatcher) ID(ctx context.Context) string {
+	p.once.Do(func() { close(p.idcalled) })
+	return p.Watcher.ID(ctx)
+}
+
+// blockingPortfolioWatcher wraps a watcher.Watcher, signalling entered and then
+// blocking Portfolio calls until unblock gets closed.
+type blockingPortfolioWatcher struct {
+	watcher.Watcher
+	entered chan struct{}
+	unblock chan struct{}
+}
+
+func (b *blockingPortfolioWatcher) Portfolio() *whalewatcher.Portfolio {
+	select {
+	case b.entered <- struct{}{}:
+	default:
+	}
+	<-b.unblock
+	return b.Watcher.Portfolio()
 }
 
 // silentUDS returns the path of a listening unix domain socket that never

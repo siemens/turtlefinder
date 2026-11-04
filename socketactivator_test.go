@@ -150,6 +150,39 @@ var _ = Describe("socket activator", Serial, Ordered, func() {
 		w.Close()
 	})
 
+	It("forgets observed sockets that have gone", func(ctx context.Context) {
+		s := newSocketActivator(
+			&model.Process{PID: model.PIDType(os.Getpid())},
+			sockactivatorSyncWait,
+			func() context.Context { return ctx },
+			nil,
+		)
+		s.observed[12345] = struct{}{}
+		Expect(s.discoverAPIPaths(nil, 42)).To(BeEmpty())
+		Expect(s.observed).NotTo(HaveKey(uint64(12345)))
+	})
+
+	It("skips empty, unknown, and unresolvable API endpoints", func(ctx context.Context) {
+		slogout := testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
+		s := newSocketActivator(
+			&model.Process{PID: model.PIDType(os.Getpid())},
+			sockactivatorSyncWait,
+			func() context.Context { return ctx },
+			nil,
+		)
+		var wg sync.WaitGroup
+		s.activateAndWatch(socketPathsByIno{
+			1: "",
+			2: "/nowhere/docker.sock",
+			3: "/nowhere/unknown.sock",
+		}, &wg, func(context.Context, watcher.Watcher, error) {
+			defer GinkgoRecover()
+			Fail("unexpected activation")
+		})
+		wg.Wait()
+		Expect(slogout.String()).To(ContainSubstring("invalid API endpoint"))
+	})
+
 	It("doesn't race on activators while updating and pruning", func(ctx context.Context) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()

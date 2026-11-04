@@ -56,6 +56,11 @@ func findDaemon(ppid model.PIDType, name string, udsino uint64) model.PIDType {
 		return 0
 	}
 	for _, pid := range pids {
+		// Skip non-process entries, especially "self" and "thread-self".
+		pidno, err := strconv.ParseInt(pid.Name(), 10, 32)
+		if err != nil {
+			continue
+		}
 		base := "/proc/" + pid.Name() + "/"
 		stat, err := os.ReadFile(base + "stat")
 		if err != nil {
@@ -80,12 +85,7 @@ func findDaemon(ppid model.PIDType, name string, udsino uint64) model.PIDType {
 			if link != sockettext {
 				continue
 			}
-			// It's a match, but now we need to return the PID...
-			pid, err := strconv.ParseInt(pid.Name(), 10, 32)
-			if err != nil {
-				return 0
-			}
-			return model.PIDType(pid)
+			return model.PIDType(pidno)
 		}
 	}
 	return 0

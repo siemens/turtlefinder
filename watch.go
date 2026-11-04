@@ -21,15 +21,11 @@ const (
 	findPolling  = 100 * time.Millisecond
 )
 
-// startWatch starts the watch on the specified watcher, shortly waiting (as
-// specified) for the watcher to synchronize to the workload of the container
-// engine watched. startWatch will always return after at most the specified
-// maxwait duration, while any watch including the initial synchronization
-// always continues on a “background” go routine.
-//
-// Errors are reported, “as usual”, through the watcher. The rationale is that
-// they can happen anyway at any later time, so having two separate error
-// reporting “channels” would just complicate matters.
+// awaitSync shortly waits (as specified) for an already watching watcher to
+// synchronize to the workload of the container engine watched. awaitSync will
+// always return after at most the specified maxwait duration, while the initial
+// synchronization continues in the background. awaitSync does not start the
+// watch itself; this is the responsibility of [NewEngine].
 //
 // The idea of the maxwait duration is to allow a time-boxed synchronous
 // behavior without blocking too long on slow engines. This allows “typical”
@@ -40,25 +36,13 @@ const (
 // can always be determined by a watcher's ready channel as returned by Ready()
 // becoming closed.
 //
-// startWatch emits informational log messages about the synchronization start
+// awaitSync emits informational log messages about the synchronization start
 // and end.
-func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
+func awaitSync(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
 	slog.Info("beginning synchronization with engine",
 		slog.String("type", w.Type()),
 		slog.Int("pid", w.PID()),
 		slog.String("api", w.API()))
-	// Start the watch including the initial synchronization on a separate go
-	// routine and controlled by the context given to us.
-	go func() {
-		err := w.Watch(ctx)
-		if err == nil {
-			return
-		}
-		slog.Warn("terminated engine workload watch",
-			slog.String("type", w.Type()),
-			slog.Int("pid", w.PID()),
-			xslog.Error(err))
-	}()
 	// Wait in the background for the synchronization to complete and then
 	// report the engine ID. The ready channel of a whale watcher also closes in
 	// case of a synchronization or other error, so this transient go routine is
@@ -102,10 +86,11 @@ func startWatch(ctx context.Context, w watcher.Watcher, maxwait time.Duration) {
 
 // activateAndStartWatch first connects to the specified API endpoint in order
 // to determine the PID of the container engine serving the API. If successful,
-// it creates a workload watcher and tells it to start watching the workload.
-// activateAndStartWatch will always return after at most the specified maxwait
-// duration. If connecting was successful, the watcher will synchronize in the
-// background even after maxwait.
+// it creates a workload watcher and hands it to outcomefn, which is responsible
+// for starting the watch (using [NewEngine]); it then waits for the initial
+// synchronization. activateAndStartWatch will always return after at most the
+// specified maxwait duration. If connecting was successful, the watcher will
+// synchronize in the background even after maxwait.
 func activateAndStartWatch(
 	ctx context.Context,
 	apipath string, // path(!) within current mount namespace, not an URL.
@@ -113,23 +98,24 @@ func activateAndStartWatch(
 	activatorPID model.PIDType,
 	enginename string,
 	creatorfn func(apipath string, pid model.PIDType) (watcher.Watcher, error),
-	outcomefn func(w watcher.Watcher, err error),
+	outcomefn func(ctx context.Context, w watcher.Watcher, err error),
 	maxwait time.Duration,
 ) {
-	// Use a buffered channel, as our consumer go routine might have already
-	// moved on by the time we've through all the motions to activate the engine
-	// and connect a watcher to it.
-	synched := make(chan struct{}, 1)
+	// Closed when activating, contacting, and synchronizing has finished, one
+	// way or another.
+	synched := make(chan struct{})
 
 	go func() {
 		// Ensure to notify the time-boxed "outer" go routine of any outcome of
-		// our attempt to activate and contact a container engine, including the
-		// passed outcomefn.
+		// our attempt to activate and contact a container engine; failures are
+		// also reported to outcomefn, success is reported further below.
 		var w watcher.Watcher
 		var err error
+		defer close(synched)
 		defer func() {
-			close(synched)
-			outcomefn(w, err)
+			if err != nil {
+				outcomefn(ctx, nil, err)
+			}
 		}()
 
 		// attempt a time-boxed connect to the engine's API endpoint in order to
@@ -200,7 +186,8 @@ func activateAndStartWatch(
 			err = fmt.Errorf("no '%s' watcher for API endpoint %s", enginename, apipath)
 			return
 		}
-		startWatch(ctx, w, max(maxwait-time.Since(started), 0))
+		outcomefn(ctx, w, nil)
+		awaitSync(ctx, w, max(maxwait-time.Since(started), 0))
 	}()
 
 	// Time-boxed wait for the engine to get started (if not already so), then a

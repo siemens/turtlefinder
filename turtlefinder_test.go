@@ -24,6 +24,7 @@ import (
 	"github.com/thediveo/whalewatcher/v2/watcher/moby"
 
 	"github.com/siemens/turtlefinder/v2/activator/podman"
+	"github.com/siemens/turtlefinder/v2/internal/testimg"
 	"github.com/siemens/turtlefinder/v2/internal/testslog"
 	"github.com/siemens/turtlefinder/v2/matcher"
 
@@ -125,8 +126,7 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		oldDefault := slog.Default()
-		DeferCleanup(func() { slog.SetDefault(oldDefault) })
+		DeferCleanup(slog.SetDefault, slog.Default())
 		_ = testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 	})
 
@@ -194,6 +194,10 @@ var _ = Describe("turtle finder", Ordered, Serial, func() {
 		Expect(tf.Engines(ctx)).To(ContainElement(
 			HaveEngine(podman.Type, fmt.Sprintf(`^unix:///proc/%d/root/run/podman/podman.sock$`, pid)),
 		), "missing podman-in-Docker engine")
+
+		By("loading the canary image from the Docker engine into podman")
+		Expect(testimg.Load(ctx, pindCntr, canaryImageRef, timestamper.New(GinkgoWriter),
+			"podman", "load")).To(Succeed())
 
 		By("creating podman workload")
 		pmCmd := Successful(pindCntr.Exec(ctx,

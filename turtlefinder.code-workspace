@@ -35,7 +35,5 @@
 		"markdown.styles": [
 			"./.vscode/markdown-preview.css"
 		],
-		"statsBar.memoUsage.format": "$(chip) ${used}/${total} ${unit}, ${percent}%",
-		"statsBar.location": "Right",
 	},
 }

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <g id="ele">
+      <rect x="0" y="6" width="30" height="18" rx="9" fill="currentColor"/>
+      <rect x="3" y="16" width="7" height="16" rx="3" fill="currentColor"/>
+      <rect x="19" y="16" width="7" height="16" rx="3" fill="currentColor"/>
+      <path d="M38 5 Q47 13 45 23 Q44.5 27 47.5 27.5 Q49 30 45 30.5 Q40.5 30.5 41 24 Q41.5 18 32 16 Z" fill="currentColor"/>
+      <circle cx="32" cy="10" r="9" fill="currentColor"/>
+      <ellipse cx="28" cy="11" rx="5" ry="7" fill="#000" opacity=".12"/>
+      <circle cx="35" cy="8" r="1.6" fill="#00303A"/>
+    </g>
+    <g id="world">
+      <polygon points="42,134 18,146 44,146" fill="#33AFAF"/>
+      <ellipse cx="70" cy="156" rx="28" ry="8" transform="rotate(-28 70 156)" fill="#33AFAF"/>
+      <ellipse cx="232" cy="158" rx="36" ry="10" transform="rotate(28 232 158)" fill="#33AFAF"/>
+      <ellipse cx="258" cy="133" rx="20" ry="11" fill="#4DBDBD"/>
+      <ellipse cx="280" cy="128" rx="24" ry="17" fill="#4DBDBD"/>
+      <circle cx="288" cy="123" r="4.5" fill="#fff"/><circle cx="289" cy="124" r="2.2" fill="#00303A"/>
+      <path d="M283.5 123 A4.5 4.5 0 0 1 292.5 123 Z" fill="#33AFAF"/>
+      <path d="M40 140 Q40 60 150 60 Q260 60 260 140 Z" fill="#009999"/>
+      <g fill="#00B3AD"><ellipse cx="150" cy="98" rx="26" ry="18"/><ellipse cx="96" cy="112" rx="18" ry="15"/><ellipse cx="204" cy="112" rx="18" ry="15"/></g>
+      <rect x="36" y="132" width="228" height="12" rx="6" fill="#00747A"/>
+      <use href="#ele" transform="translate(148,28) scale(-1,1)" style="color:#80CCCC"/>
+      <use href="#ele" transform="translate(152,28)" style="color:#80CCCC"/>
+      <use href="#ele" transform="translate(115,36) scale(-1,1)" style="color:#B3E0E0"/>
+      <use href="#ele" transform="translate(185,36)" style="color:#B3E0E0"/>
+      <ellipse cx="150" cy="30" rx="110" ry="10" fill="#00B3AD"/>
+      <ellipse cx="150" cy="26" rx="110" ry="10" fill="#E6F5F5"/>
+    </g>
+  </defs>
+  <circle cx="200" cy="200" r="185" fill="#00161C"/>
+  <g fill="#CCEBEB"><circle cx="90" cy="95" r="2"/><circle cx="300" cy="80" r="2.5"/><circle cx="330" cy="150" r="1.5"/><circle cx="70" cy="200" r="1.5"/><circle cx="120" cy="320" r="2"/><circle cx="290" cy="330" r="1.5"/><circle cx="200" cy="50" r="1.5"/><circle cx="318" cy="318" r="2"/><circle cx="160" cy="60" r="1"/><circle cx="250" cy="360" r="1"/></g>
+  <g transform="translate(47,152.5) scale(.95)">
+    <use href="#world"/>
+    <g transform="translate(150,31) scale(1.85) translate(-150,-43)">
+      <path d="M121 18 Q108 14 104 1 Q113 8 119 5 Q117 12 125 16 Z" fill="#2496ED"/>
+      <path d="M118 16 L183 16 Q187 30 170 37 Q150 43 130 37 Q118 31 118 16 Z" fill="#2496ED"/>
+      <circle cx="171" cy="24" r="2" fill="#fff"/>
+      <g fill="#2496ED"><rect x="127" y="6.5" width="8" height="8"/><rect x="136.5" y="6.5" width="8" height="8"/><rect x="146" y="6.5" width="8" height="8"/><rect x="155.5" y="6.5" width="8" height="8"/><rect x="165" y="6.5" width="8" height="8"/><rect x="136.5" y="-3" width="8" height="8"/><rect x="146" y="-3" width="8" height="8"/><rect x="155.5" y="-3" width="8" height="8"/><rect x="155.5" y="-12.5" width="8" height="8"/></g>
+    </g>
+  </g>
+</svg>

@@ -7,6 +7,7 @@ package turtlefinder
 import (
 	"context"
 	"log/slog"
+	"maps"
 	"runtime"
 	"slices"
 	"strconv"
@@ -18,6 +19,8 @@ import (
 	"github.com/thediveo/go-plugger/v3"
 	"github.com/thediveo/lxkns/containerizer"
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/sets"
+	"github.com/thediveo/nonstd/xslog"
 	"github.com/thediveo/procfsroot"
 	"github.com/thediveo/whalewatcher/v2/watcher"
 	"golang.org/x/sync/semaphore"
@@ -64,12 +67,14 @@ type TurtleFinder struct {
 	initialsyncwait  time.Duration       // max. wait for engine watch coming online (sync) before proceeding.
 
 	mux        sync.Mutex                                // protects the following fields.
+	closed     bool                                      // no further engines get registered after Close.
 	engines    map[model.PIDType][]*Engine               // engines by PID; individual engines may have failed.
+	pending    sets.Set[model.PIDType]                   // engine PIDs currently being looked into.
 	activators map[model.PIDType]*socketActivatorProcess // socket activators we've found.
 }
 
-// TurtleFinder implements the lxkns Containerizer and Oversseer interfaces. And it's also an
-// Overseer.
+// TurtleFinder implements the lxkns Containerizer and Overseer interfaces, as
+// well as our own Overseer interface.
 var _ containerizer.Overseer = (*TurtleFinder)(nil)
 var _ Overseer = (*TurtleFinder)(nil)
 
@@ -107,6 +112,7 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 	f := &TurtleFinder{
 		contexter:       contexter,
 		engines:         map[model.PIDType][]*Engine{},
+		pending:         sets.New[model.PIDType](),
 		activators:      map[model.PIDType]*socketActivatorProcess{},
 		initialsyncwait: 2 * time.Second,
 	}
@@ -148,20 +154,36 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 	return f
 }
 
+// EnginesInclContainers returns the container engines found in the specified
+// process table together with their alive containers, including currently
+// workload-less engines. Newly found engines get a short time to synchronize
+// with their workloads; failed engines are skipped. The optional pidmap
+// allows to determine engines running inside containers of other engines.
 func (f *TurtleFinder) EnginesInclContainers(
 	ctx context.Context, procs model.ProcessTable, pidmap model.PIDMapper,
 ) []*model.ContainerEngine {
+	f.mux.Lock()
+	closed := f.closed
+	f.mux.Unlock()
+	if closed {
+		return []*model.ContainerEngine{}
+	}
 	// Do some quick housekeeping first: remove engines (watchers) whose
 	// processes have vanished. Also remove vanished socket activators like
 	// "systemd" in containers.
 	f.prune(procs)
 	// Then look for new engine processes and/or socket activators.
 	f.update(ctx, procs)
-	// Now query the available engines for containers that are alive...
+	// Now query the available engines for containers that are alive, skipping
+	// failed engines (see prune).
 	f.mux.Lock()
 	allEngines := make([]*Engine, 0, len(f.engines) /* lucky guess */)
 	for _, engines := range f.engines {
-		allEngines = append(allEngines, engines...)
+		for _, engine := range engines {
+			if engine.IsAlive() {
+				allEngines = append(allEngines, engine)
+			}
+		}
 	}
 	f.mux.Unlock()
 	if len(allEngines) == 0 {
@@ -176,9 +198,15 @@ func (f *TurtleFinder) EnginesInclContainers(
 	engineWorkloadCh := make(chan *model.ContainerEngine, len(allEngines))
 	var theendisnear atomic.Int64 // track amount of engine results
 	theendisnear.Add(int64(len(allEngines)))
-	for _, engine := range allEngines {
+	for idx, engine := range allEngines {
 		if err := f.workersem.Acquire(ctx, 1); err != nil {
-			return []*model.ContainerEngine{}
+			// Skip the remaining engines, but still return the workloads of the
+			// engines already being consulted.
+			if theendisnear.Add(int64(idx-len(allEngines))) == 0 {
+				close(engineWorkloadCh)
+			}
+			allEngines = allEngines[:idx]
+			break
 		}
 		go func(engine *Engine) {
 			defer f.workersem.Release(1)
@@ -236,12 +264,27 @@ func (f *TurtleFinder) Containers(
 func (f *TurtleFinder) Close() {
 	f.mux.Lock()
 	defer f.mux.Unlock()
+	f.closed = true
 	for _, engines := range f.engines {
 		for _, engine := range engines {
 			engine.Close()
 		}
 	}
-	f.engines = nil
+	clear(f.engines)
+}
+
+// register adds the engine to the engines of the specified engine process,
+// unless this turtle finder has already been closed; then it closes the engine
+// instead and returns false.
+func (f *TurtleFinder) register(pid model.PIDType, eng *Engine) bool {
+	f.mux.Lock()
+	defer f.mux.Unlock()
+	if f.closed {
+		eng.Close()
+		return false
+	}
+	f.engines[pid] = append(f.engines[pid], eng)
+	return true
 }
 
 // Engines returns information about the container engines currently being
@@ -252,12 +295,8 @@ func (f *TurtleFinder) Engines(context.Context) []*model.ContainerEngine {
 	allEngines := make([]*model.ContainerEngine, 0, len(f.engines))
 	for _, engines := range f.engines {
 		for _, engine := range engines {
-			select {
-			case <-engine.Done:
-				continue // already Done, so ignore this engine.
-			default:
-				// not Done, so let's move on and add it to the list of available
-				// engines.
+			if !engine.IsAlive() {
+				continue
 			}
 			allEngines = append(allEngines, &model.ContainerEngine{
 				ID:      engine.ID,
@@ -271,31 +310,37 @@ func (f *TurtleFinder) Engines(context.Context) []*model.ContainerEngine {
 	return allEngines
 }
 
-// EngineCount returns the number of container engines currently under watch.
-// Callers might want to use the Engines method instead as EngineCount bases on
-// it (because we don't store an explicit engine count anywhere).
+// EngineCount returns the number of container engines currently under watch,
+// that is, the number of engines [TurtleFinder.Engines] returns.
 func (f *TurtleFinder) EngineCount() int {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	return len(f.engines)
+	count := 0
+	for _, engines := range f.engines {
+		for _, engine := range engines {
+			if engine.IsAlive() {
+				count++
+			}
+		}
+	}
+	return count
 }
 
-// prune any terminated watchers, either because the watcher terminated itself
-// or we can't find the associated engine process anymore. This covers both
-// engines once detected by their well-known process names, as well as engines
-// detected to be socket-activated.
+// prune terminated watchers of engine processes that have gone, as well as
+// socket activator processes that have gone missing. This covers both engines
+// once detected by their well-known process names, as well as engines detected
+// to be socket-activated.
 //
-// Also prune any socket activator processes that have gone missing.
+// By design, a failed engine watcher isn't retried while its engine process is
+// still alive: it stays registered, blocking updates from watching the process
+// again, but gets skipped when querying engines and their workloads.
 func (f *TurtleFinder) prune(procs model.ProcessTable) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	// Prune engine watchers...
 	for pid, engines := range f.engines {
 		if procs[pid] != nil {
 			continue
 		}
-		// This particular container engine process has gone, so we need to
-		// remove all individual watchers for for it.
 		engines = slices.DeleteFunc(engines, func(engine *Engine) bool {
 			if engine.IsAlive() {
 				return false
@@ -303,10 +348,6 @@ func (f *TurtleFinder) prune(procs model.ProcessTable) {
 			engine.Close() // ...if not already done so.
 			return true
 		})
-		// Update the engines (watchers) for this (albeit gone) container engine
-		// process, as long as there are still watchers alive. If all watchers
-		// also have gone, then remove this engine process completely from our
-		// inventory.
 		if len(engines) == 0 {
 			delete(f.engines, pid)
 			continue
@@ -379,10 +420,13 @@ NextProcess:
 	newengineprocs := make([]engineProcess, 0, len(engineprocs))
 	f.mux.Lock()
 	for _, engineproc := range engineprocs {
-		// Is this an engine PID we already know and watch?
-		if _, ok := f.engines[engineproc.proc.PID]; ok {
+		// Is this an engine PID we already know and watch, or that a parallel
+		// update is already looking into?
+		pid := engineproc.proc.PID
+		if _, ok := f.engines[pid]; ok || f.pending.Contains(pid) {
 			continue
 		}
+		f.pending.Add(pid)
 		newengineprocs = append(newengineprocs, engineproc)
 	}
 	f.mux.Unlock()
@@ -399,6 +443,11 @@ NextProcess:
 	for _, engineproc := range newengineprocs {
 		go func(engineproc engineProcess) {
 			defer wg.Done()
+			defer func() {
+				f.mux.Lock()
+				f.pending.Delete(engineproc.proc.PID)
+				f.mux.Unlock()
+			}()
 			slog.Debug("scanning new potential engine process for API endpoints",
 				slog.String("name", engineproc.proc.Name),
 				slog.Int("pid", int(engineproc.proc.PID)))
@@ -416,14 +465,18 @@ NextProcess:
 			for idx, apipath := range apisox {
 				wormhole := "/proc/" + strconv.FormatUint(uint64(engineproc.proc.PID), 10) +
 					"/root"
-				apipath, err := procfsroot.EvalSymlinks(apipath, wormhole, procfsroot.EvalFullPath)
+				evalpath, err := procfsroot.EvalSymlinks(apipath, wormhole, procfsroot.EvalFullPath)
 				if err != nil {
 					slog.Warn("invalid API endpoint",
-						slog.String("api", apipath), slog.String("context", wormhole))
+						slog.String("api", apipath), slog.String("context", wormhole), xslog.Error(err))
 					apisox[idx] = ""
 					continue
 				}
-				apisox[idx] = wormhole + apipath
+				apisox[idx] = wormhole + evalpath
+			}
+			apisox = slices.DeleteFunc(apisox, func(apipath string) bool { return apipath == "" })
+			if len(apisox) == 0 {
+				return
 			}
 			// Ask the contexter to give us a long-living engine workload
 			// watching context; just using the background context (or even a
@@ -433,11 +486,11 @@ NextProcess:
 			enginectx := f.contexter()
 			for _, w := range engineproc.engine.detector.NewWatchers(enginectx, engineproc.proc.PID, apisox) {
 				// We've got a new watcher! Or two... *snicker* ...so many demons!
-				startWatch(enginectx, w, f.initialsyncwait)
 				eng := NewEngine(enginectx, w, engineproc.proc.PPID)
-				f.mux.Lock()
-				f.engines[engineproc.proc.PID] = append(f.engines[engineproc.proc.PID], eng)
-				f.mux.Unlock()
+				if !f.register(engineproc.proc.PID, eng) {
+					return
+				}
+				awaitSync(enginectx, w, f.initialsyncwait)
 			}
 		}(engineproc)
 	}
@@ -468,11 +521,7 @@ NextProcess:
 		f.activators[activatorproc.PID] = newSocketActivator(activatorproc,
 			f.initialsyncwait,
 			f.contexter,
-			func(w watcher.Watcher, pid model.PIDType) {
-				// As this comes in from a different "background" go routine, we
-				// need to make sure that we're not trashing our engine map.
-				f.mux.Lock()
-				defer f.mux.Unlock()
+			func(ctx context.Context, w watcher.Watcher, pid model.PIDType) {
 				// Freshly socket-activated engines won't yet be in the process
 				// tree we're working on. In order to allow downstream users of
 				// turtlefinders – lxkns in particular – to still do correct
@@ -484,12 +533,11 @@ NextProcess:
 				if engproc := model.NewProcess(pid, false); engproc != nil {
 					ppidhint = engproc.PPID
 				}
-				f.engines[pid] = []*Engine{
-					NewEngine(f.contexter(), w, ppidhint),
-				}
+				f.register(pid, NewEngine(ctx, w, ppidhint))
 			},
 		)
 	}
+	activators := slices.Collect(maps.Values(f.activators))
 	f.mux.Unlock()
 	// Now iterate over all the socket activators currently known and tell them
 	// to update: the activators are responsible for discovering (new)
@@ -497,7 +545,7 @@ NextProcess:
 	// the more complex activation and discovery mechanism. New watchers are
 	// then reported via the createdWatcherFn callback function registered above
 	// when we created new socket activator (proxy) objects.
-	for _, activator := range f.activators {
+	for _, activator := range activators {
 		activator.update(wg)
 	}
 }

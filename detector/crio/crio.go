@@ -50,17 +50,16 @@ func (d *Detector) NewWatchers(ctx context.Context, pid model.PIDType, apis []st
 				xslog.Error(err))
 			continue
 		}
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		version := w.Version(ctx)
-		err = ctx.Err()
-		if err != nil || version == "" {
-			slog.Debug("CRI-O API Info call context hit deadline",
-				xslog.Error(err))
-		}
+		versionctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		version := w.Version(versionctx)
+		err = versionctx.Err()
 		cancel()
-		if err == nil {
+		if version != "" {
 			return []watcher.Watcher{w}
 		}
+		slog.Debug("CRI-O API endpoint returned no version",
+			slog.String("api", apipathname),
+			xslog.Error(err))
 		w.Close()
 	}
 	slog.Error("no working CRI-O API endpoint found")

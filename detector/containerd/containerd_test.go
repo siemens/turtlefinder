@@ -19,10 +19,10 @@ import (
 	"github.com/thediveo/morbyd/v2/run"
 	"github.com/thediveo/morbyd/v2/session"
 	"github.com/thediveo/morbyd/v2/timestamper"
-	"github.com/thediveo/whalewatcher/v2/engineclient/cri/test/img"
 	"github.com/thediveo/whalewatcher/v2/test"
 
 	detect "github.com/siemens/turtlefinder/v2/detector"
+	"github.com/siemens/turtlefinder/v2/internal/testimg"
 	"github.com/siemens/turtlefinder/v2/internal/testslog"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -33,7 +33,8 @@ import (
 )
 
 const (
-	kindischName = "turtlefinder-containerd"
+	kindischName      = "turtlefinder-containerd"
+	kindischImageName = "siemens/turtlefinder-kindisch-containerd"
 
 	testNamespace     = "testing"
 	testContainerName = "canary"
@@ -84,11 +85,11 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 		//   --volume /lib/modules:/lib/modules:ro
 		//   kindisch-...
 		Expect(sess.BuildImage(ctx, "./_test/kindisch",
-			build.WithTag(img.Name),
+			build.WithTag(kindischImageName),
 			build.WithBuildArg("KINDEST_BASE_TAG="+test.KindestBaseImageTag),
 			build.WithOutput(timestamper.New(GinkgoWriter)))).
 			Error().NotTo(HaveOccurred())
-		providerCntr = Successful(sess.Run(ctx, img.Name,
+		providerCntr = Successful(sess.Run(ctx, kindischImageName,
 			run.WithName(kindischName),
 			run.WithAutoRemove(),
 			run.WithPrivileged(),
@@ -125,8 +126,7 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 	})
 
 	It("tries unsuccessfully", NodeTimeout(30*time.Second), func(ctx context.Context) {
-		oldDefault := slog.Default()
-		defer slog.SetDefault(oldDefault)
+		defer slog.SetDefault(slog.Default())
 		slogout := testslog.SetDefault(slog.LevelInfo, GinkgoWriter)
 		d := &Detector{}
 		Expect(d.NewWatchers(ctx, 0, []string{"/etc/rumpelpumpel"})).To(BeEmpty())
@@ -134,16 +134,12 @@ var _ = Describe("containerd turtle watcher", Ordered, func() {
 	})
 
 	It("watches successfully", NodeTimeout(30*time.Second), func(ctx context.Context) {
-		By("pulling a busybox image (if necessary)")
-		ctr := Successful(providerCntr.Exec(ctx,
-			exec.Command("ctr",
-				"-n", testNamespace,
-				"image", "pull", testImageRef),
-			exec.WithCombinedOutput(timestamper.New(GinkgoWriter))))
-		Expect(ctr.Wait(ctx)).To(BeZero())
+		By("loading a busybox image from the Docker engine into containerd")
+		Expect(testimg.Load(ctx, providerCntr, testImageRef, timestamper.New(GinkgoWriter),
+			"ctr", "-n", testNamespace, "image", "import", "-")).To(Succeed())
 
 		By("creating a new container+task and starting it")
-		ctr = Successful(providerCntr.Exec(ctx,
+		ctr := Successful(providerCntr.Exec(ctx,
 			exec.Command("ctr",
 				"-n", testNamespace,
 				"run", "-d",

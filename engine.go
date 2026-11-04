@@ -51,7 +51,7 @@ func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *
 		Watcher:  w,
 		ID:       w.ID(idctx),
 		Version:  w.Version(idctx),
-		Done:     make(chan struct{}, 1), // might never be picked up in some situations
+		Done:     make(chan struct{}),
 		PPIDHint: ppidhint,
 	}
 	cancel() // ensure to quickly release cancel, silence linter
@@ -60,8 +60,13 @@ func NewEngine(ctx context.Context, w watcher.Watcher, ppidhint model.PIDType) *
 		slog.Int("pid", w.PID()))
 	go func() {
 		err := e.Watch(ctx)
-		slog.Info("stopped watching container engine due to failure",
-			slog.Int("pid", w.PID()), xslog.Error(err))
+		if err != nil && ctx.Err() == nil {
+			slog.Warn("terminated engine workload watch",
+				slog.String("type", w.Type()), slog.Int("pid", w.PID()), xslog.Error(err))
+		} else {
+			slog.Info("terminated engine workload watch",
+				slog.String("type", w.Type()), slog.Int("pid", w.PID()))
+		}
 		close(e.Done)
 		e.Close()
 	}()

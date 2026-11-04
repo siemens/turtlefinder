@@ -1,3 +1,5 @@
+<img align="right" width="150" height="150" src="_media/turtlefinder-150x150.png" style="padding: 0 0 1ex 0.8em">
+
 [![Siemens](https://img.shields.io/badge/github-siemens-009999?logo=github)](https://github.com/siemens)
 [![Industrial Edge](https://img.shields.io/badge/github-industrial%20edge-e39537?logo=github)](https://github.com/industrial-edge)
 [![Edgeshark](https://img.shields.io/badge/github-Edgeshark-003751?logo=github)](https://github.com/siemens/edgeshark)
@@ -10,7 +12,7 @@
 ![build and test](https://github.com/siemens/turtlefinder/actions/workflows/buildandtest.yaml/badge.svg?branch=main)
 ![goroutines](https://img.shields.io/badge/go%20routines-not%20leaking-success)
 ![file descriptors](https://img.shields.io/badge/file%20descriptors-not%20leaking-success)
-![Coverage](https://img.shields.io/badge/Coverage-88.0%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-93.2%25-brightgreen)
 
 > 🐢🐘 ["Turtles all the way down"
 > (Wikipedia)](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
@@ -63,19 +65,20 @@ over. So this is, what the first parameter to `New` is.
 
 For further options, please refer to the module documentation.
 
-## Project Structure
+## Edgeshark Project
 
-The "Edgeshark" project consist of several repositories:
-- [Edgeshark Hub repository](https://github.com/siemens/edgeshark)
-- [G(h)ostwire discovery service](https://github.com/siemens/ghostwire)
+The turtlefinder module is part of the "Edgeshark" project that consist of
+several repositories:
+- [Edgeshark Hub repository](https://github.com/siemens/edgeshark) with
+  Edgeshark Industrial Edge App.
+- [Ghostwire discovery service](https://github.com/siemens/ghostwire)
 - [Packetflix packet streaming service](https://github.com/siemens/packetflix)
 - [Containershark Extcap plugin for
   Wireshark](https://github.com/siemens/cshargextcap)
-- support modules:
-  - 🖝 **Turtlefinder** 🖜
-  - [csharg (CLI)](https://github.com/siemens/csharg)
-  - [mobydig](https://github.com/siemens/mobydig)
-  - [ieddata](https://github.com/siemens/ieddata)
+- **Turtlefinder**
+- [csharg (CLI)](https://github.com/siemens/csharg)
+- [mobydig](https://github.com/siemens/mobydig)
+- [ieddata](https://github.com/siemens/ieddata)
 
 ## Mode of Operation
 

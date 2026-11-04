@@ -1,12 +1,12 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
-# As we cannot use devcontainer features here, we're running the installation
-# scripts directly from the build context without copying them first into the
-# layer.
-RUN --mount=type=bind,target=/context /context/install.sh \
-    && TAGS=matchers ROOT=true NUM_PROGRAMS=1 RACE=true VERBOSE=true HTML=true \
-        /context/gocover-install.sh
+# Installs systemd, Docker CE and Go, replacing the go and docker-in-docker
+# devcontainer features that are incompatible with systemd as PID 1.
+RUN --mount=type=bind,target=/context /context/install.sh
 
-# Note: do not install any devcontainer features as this will break the entry
-# point.
+# Feature install scripts run "go install" and don't source /etc/profile.d.
+ENV GOROOT=/usr/local/go \
+    GOPATH=/go \
+    PATH=/usr/local/go/bin:/go/bin:${PATH}
+
 ENTRYPOINT [ "/usr/lib/systemd/systemd" ]

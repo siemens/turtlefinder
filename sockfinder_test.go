@@ -53,12 +53,24 @@ var _ = Describe("socket finder", func() {
 			Expect(os.Symlink("socket:[2345678]", fakefds+"/2")).To(Succeed())
 			Expect(os.WriteFile(fakefds+"/3", []byte("foobar"), 0644)).To(Succeed())
 			Expect(os.Symlink("socket:[", fakefds+"/666")).To(Succeed())
+			Expect(os.Symlink("socket:[42", fakefds+"/667")).To(Succeed())
 
 			Expect(rawSocketFdsOfProcess(fakeproc, 123456)).To(ConsistOf(
 				rawSocketFd{fd: "2", socketino: "2345678"},
 			))
 		})
 
+	})
+
+	It("returns nothing for a non-existing process", func() {
+		Expect(listeningUDSVisibleToProcess(0)).To(BeNil())
+		Expect(listeningUDSPathsOfProcess(0, socketPathsByIno{})).To(BeNil())
+	})
+
+	It("skips socket fds with invalid inode numbers", func() {
+		Expect(listeningUDSPaths(
+			[]rawSocketFd{{fd: "1", socketino: "abc"}},
+			socketPathsByIno{})).To(BeEmpty())
 	})
 
 	It("finds Docker API unix socket", func() {
@@ -85,6 +97,17 @@ var _ = Describe("socket finder", func() {
 		rawfds := Successful(rawSocketFdsOfProcess("", model.PIDType(os.Getpid())))
 		lsox := listeningUDSPaths(rawfds, listeningUDSVisibleToProcess(model.PIDType(os.Getpid())))
 		Expect(lsox).To(ContainElement(canarysockpath))
+	})
+
+	It("finds listening unix sockets with spaces in their paths", func() {
+		fakesockdir := Successful(os.MkdirTemp("", "fake sock-*"))
+		DeferCleanup(os.RemoveAll, fakesockdir)
+
+		canarysockpath := fakesockdir + "/canary  sock.sock"
+		lsock := Successful(net.Listen("unix", canarysockpath))
+		defer func() { _ = lsock.Close() }()
+
+		Expect(listeningUDSVisibleToProcess(model.PIDType(os.Getpid()))).To(ContainElement(canarysockpath))
 	})
 
 })

@@ -34,7 +34,7 @@
     ],
     "remoteEnv": {
         "GOPATH": "/home/vscode/go",
-        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${localEnv:PATH}"
+        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${containerEnv:PATH}"
     },
     "postCreateCommand": {
         "setup Go workspace": "sudo chown vscode:vscode /workspaces && cd /workspaces && go work init lxkns turtlefinder"

@@ -6,13 +6,15 @@ package turtlefinder
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
-	"unsafe"
 
 	"github.com/thediveo/lxkns/model"
+	"github.com/thediveo/nonstd/xslog"
 
 	"github.com/siemens/turtlefinder/v2/unsorted"
 )
@@ -43,14 +45,22 @@ const (
 
 // socketFdPrefix is the prefix of the string returned when readlink-ing a file
 // descriptor pseudo symlink of a process. The prefix is followed by the inode
-// number of the socket, and a final closing square bracket. We define the
-// prefix and its length here for once and all, so we aren't scattering around
-// the same stuff in different places wherever we need it.
+// number of the socket, and a final closing square bracket.
 //
 // See also: https://man7.org/linux/man-pages/man5/proc.5.html, description of
 // the “/proc/pid/fd/” subdirectories.
 const socketFdPrefix = "socket:["
-const socketFdPrefixLen = len(socketFdPrefix)
+
+// socketInoOfFdLink returns the inode number text of a “socket:[ino]” file
+// descriptor link, or false if the link doesn't reference a socket.
+func socketInoOfFdLink(fdlink string) (string, bool) {
+	ino, ok := strings.CutPrefix(fdlink, socketFdPrefix)
+	if !ok {
+		return "", false
+	}
+	ino, ok = strings.CutSuffix(ino, "]")
+	return ino, ok && ino != ""
+}
 
 // discoverAPISocketsOfProcess returns a list of listening unix domain sockets
 // for a specific process that might be API endpoints. The PID of the process
@@ -104,12 +114,13 @@ func rawSocketFdsOfProcess(procfs string, pid model.PIDType) ([]rawSocketFd, err
 		if err != nil {
 			continue
 		}
-		if !strings.HasPrefix(linksto, socketFdPrefix) || len(linksto) == socketFdPrefixLen {
+		ino, ok := socketInoOfFdLink(linksto)
+		if !ok {
 			continue
 		}
 		sockets = append(sockets, rawSocketFd{
 			fd:        fd.Name(),
-			socketino: linksto[socketFdPrefixLen : len(linksto)-1], // always assuming the procfs isn't returning crappy entries.
+			socketino: ino,
 		})
 	}
 	return sockets, nil
@@ -151,10 +162,14 @@ func listeningUDSPathsOfProcess(pid model.PIDType, listeningUDS socketPathsByIno
 	// usual, subject to the current mount namespace).
 	for _, fdentry := range fdentries {
 		fdlink, err := os.Readlink(fdbase + fdentry.Name())
-		if err != nil || !strings.HasPrefix(fdlink, socketFdPrefix) {
+		if err != nil {
 			continue
 		}
-		ino, err := strconv.ParseUint(fdlink[socketFdPrefixLen:len(fdlink)-1], 10, 64)
+		inotext, ok := socketInoOfFdLink(fdlink)
+		if !ok {
+			continue
+		}
+		ino, err := strconv.ParseUint(inotext, 10, 64)
 		if err != nil {
 			continue
 		}
@@ -235,73 +250,58 @@ func listeningUDSVisibleToProcess(pid model.PIDType) socketPathsByIno {
 	// attention to the field width(s). Please note that the "Path" field is not
 	// included in the formatting string.
 	socketscanner := bufio.NewScanner(netunixf)
+	space := []byte{' '}
 	for socketscanner.Scan() {
 		// For increased "fun", the Linux kernel sometimes separates at least
 		// some fields by multiple(!) whitespaces when their field contents are
 		// "narrow". For instance, the inode number is smaller than 5 digits
 		// ("%5lu"). Now, many inode numbers are actually 6 digits and more, so
 		// this padding might be some ancient leftover. Yet, it laid a trap
-		// undetected in this code for multiple years. The fix: use
-		// strings.Fields instead of strings.Split.
+		// undetected in this code for multiple years. The fix: skip any leading
+		// spaces of each field. As the path field is the last one and might
+		// contain spaces itself, it is simply the remainder of the line.
 		//
-		// Note: we're now painting racing stripes on our Gophers: in order to
-		// speed up parsing by roughly 25% and almost halving the number of
-		// required allocations (and reducing memory consumption by almost 33%)
-		// we use the non-allocating Scanner.Bytes() method and then convert the
-		// resulting byte slice into a string without allocating and copying the
-		// line contents. The string is basically aliasing the byte slice and we
-		// thus must not keep any substrings around that survive a single loop.
-		// For this reason we clone the unix domain socket path and only return
-		// this deep copy.
+		// Note: we're painting racing stripes on our Gophers: we use the
+		// non-allocating Scanner.Bytes() method and work on the line's byte
+		// slice directly. As the scanner reuses its buffer, only the path of a
+		// listening socket gets copied into a string to keep it.
 		//
 		// For more background information, please see also:
 		//  - using non-allocating Scanner.Bytes(): https://stackoverflow.com/a/64643397
-		//  - deep cloning a string: https://stackoverflow.com/a/68972665
-		//  - issue #53003: unsafe: add StringData, String, SliceData;
-		//    https://github.com/golang/go/issues/53003
-		fields := strings.Fields(asString(socketscanner.Bytes()))
-		if len(fields) <= netUnixPathField {
-			continue
+		var fields [netUnixPathField][]byte
+		path := socketscanner.Bytes()
+		for idx := range fields {
+			fields[idx], path, _ = bytes.Cut(bytes.TrimLeft(path, " "), space)
 		}
-		// Ignore sockets from the "abstract namespace" (yet another namespace,
-		// totally unrelated to the Linux kernel namespaces described in
+		// Ignore unnamed sockets as well as sockets from the "abstract
+		// namespace" (yet another namespace, totally unrelated to the Linux
+		// kernel namespaces described in
 		// https://man7.org/linux/man-pages/man7/namespaces.7.html).
-		if fields[netUnixPathField] != "" && fields[netUnixPathField][0] == '@' {
+		if len(path) == 0 || path[0] == '@' {
 			continue
 		}
-		flags, err := strconv.ParseUint(fields[netUnixFlagsField], 16, 32)
+		// The short, non-escaping string conversions get stack-allocated.
+		flags, err := strconv.ParseUint(string(fields[netUnixFlagsField]), 16, 32)
 		if err != nil { // also skips header line
 			continue
 		}
-		soxtype, err := strconv.ParseUint(fields[netUnixTypeField], 16, 16)
+		soxtype, err := strconv.ParseUint(string(fields[netUnixTypeField]), 16, 16)
 		if err != nil {
 			continue
 		}
-		// A string "deep" copy avoids the whole text line hanging around as
-		// long as someone keeps the path result alive, see also:
-		// https://stackoverflow.com/a/68972665
-		path := strings.Clone(fields[netUnixPathField])
 		// If this ain't ;) a unix socket in listening mode, then skip it.
 		if soxtype != sockStream || flags != soAcceptCon {
 			continue
 		}
-		ino, err := strconv.ParseUint(fields[netUnixInodeField], 10, 64)
+		ino, err := strconv.ParseUint(string(fields[netUnixInodeField]), 10, 64)
 		if err != nil {
 			continue
 		}
-		sox[ino] = path // finally map the socket's inode number to its path.
+		sox[ino] = string(path)
 	}
-	_ = socketscanner.Err()
+	if err := socketscanner.Err(); err != nil {
+		slog.Warn("cannot completely read unix domain sockets",
+			slog.Int("pid", int(pid)), xslog.Error(err))
+	}
 	return sox
 }
-
-// asString returns a string for the specified byte slice, without allocating
-// memory and without copying the contents. In consequence, the underlying byte
-// slice must not be changed while the returned string is alive. Moreover, this
-// variant of alloc-free byte slice to string conversion expects the caller to
-// always pass non-nil byte slices (which is easily guaranteed in our specific
-// contexts).
-//
-// As for the correct usage of unsafe.String please also see
-// https://go101.org/article/unsafe.html.
-func asString(b []byte) string { return unsafe.String(unsafe.SliceData(b), len(b)) }

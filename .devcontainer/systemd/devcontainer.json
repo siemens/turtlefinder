@@ -10,9 +10,26 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
-    // IMPORTANT: overrideCommand and init only work in this case as long as we
-    // don't install any devcontainer feature. Otherwise, vscode will break the
-    // setup as it tries to start systemd as a PID other than 1.
+    "features": {
+        "ghcr.io/devcontainers/features/node:2": {},
+        "ghcr.io/thediveo/devcontainer-features/local-pkgsite:1": {
+            "port": "6060"
+        },
+        "ghcr.io/thediveo/devcontainer-features/pinact:0": {},
+        "ghcr.io/thediveo/devcontainer-features/go-mod-upgrade:1": {},
+        "ghcr.io/thediveo/devcontainer-features/lazygit:0": {},
+        "ghcr.io/thediveo/devcontainer-features/gocover:1": {
+            "tags": "matchers",
+            "root": true,
+            "num-programs": "1",
+            "race": true,
+            "verbose": true,
+            "html": true
+        }
+    },
+    // IMPORTANT: no features declaring "init": true (go; the CLI ORs it, so
+    // systemd wouldn't be PID 1) or starting daemons via "entrypoint"
+    // (docker-in-docker; clashes with systemd's docker.service).
     "overrideCommand": false,
     "init": false,
     "privileged": true,
@@ -36,11 +53,13 @@
     ],
     "remoteEnv": {
         "GOPATH": "/home/vscode/go",
-        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${localEnv:PATH}"
+        "PATH": "/home/vscode/go/bin:/go/bin:/usr/local/go/bin:${containerEnv:PATH}"
     },
     "customizations": {
         "vscode": {
             "extensions": [
+                "golang.Go",
+                "ms-azuretools.vscode-containers",
                 "stkb.rewrap",
                 "brunnerh.insert-unicode",
                 "mhutchie.git-graph",

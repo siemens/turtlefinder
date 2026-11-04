@@ -164,50 +164,26 @@ EOF
   log "Installed $(/usr/local/go/bin/go version)"
 }
 
-install_go_tools_for_vscode() {
-  log "Installing Go tools for vscode user"
-  
-  # Check if vscode user exists
-  if ! id -u vscode >/dev/null 2>&1; then
-    log "Warning: vscode user does not exist, skipping Go tools installation"
-    return
-  fi
+# Replaces the tools otherwise installed by the go devcontainer feature.
+install_go_tools() {
+  log "Installing Go tools"
 
-  # Set up GOPATH and GOBIN for vscode user
-  local vscode_home
-  vscode_home="$(getent passwd vscode | cut -d: -f6)"
-  
-  if [[ -z "${vscode_home}" || ! -d "${vscode_home}" ]]; then
-    log "Warning: vscode home directory not found, skipping Go tools installation"
-    return
-  fi
+  export GOROOT=/usr/local/go
+  export GOPATH=/go
+  export GOCACHE=/tmp/gocache
+  export PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
 
-  local gopath="${vscode_home}/go"
-  local gobin="${gopath}/bin"
+  local tools=(
+    "golang.org/x/tools/gopls@latest"
+    "github.com/go-delve/delve/cmd/dlv@latest"
+    "honnef.co/go/tools/cmd/staticcheck@latest"
+  )
+  for tool in "${tools[@]}"; do
+    go install "${tool}"
+  done
 
-  # Create directories with proper ownership
-  mkdir -p "${gopath}" "${gobin}"
-  chown -R vscode:vscode "${gopath}"
-
-  # Install Go tools as vscode user
-  su - vscode -c "
-    export GOROOT=/usr/local/go
-    export GOPATH=${gopath}
-    export GOBIN=${gobin}
-    export PATH=/usr/local/go/bin:\${GOBIN}:\${PATH}
-    
-    echo 'Installing lazygit...'
-    /usr/local/go/bin/go install github.com/jesseduffield/lazygit@latest
-    
-    echo 'Installing go-mod-upgrade...'
-    /usr/local/go/bin/go install github.com/oligot/go-mod-upgrade@latest
-
-    echo 'Installing gobadge...'
-    /usr/local/go/bin/go install github.com/AlexBeauchemin/gobadge@latest
-  "
-
-  log "Go tools installed successfully for vscode user"
-  log "Binaries location: ${gobin}"
+  go clean -modcache
+  rm -rf "${GOCACHE}"
 }
 
 cleanup() {
@@ -220,6 +196,6 @@ install_systemd
 setup_systemd_safeguards
 install_docker_ce
 install_latest_go
-install_go_tools_for_vscode
+install_go_tools
 
 cleanup

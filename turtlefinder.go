@@ -154,6 +154,11 @@ func New(contexter Contexter, opts ...NewOption) *TurtleFinder {
 	return f
 }
 
+// EnginesInclContainers returns the container engines found in the specified
+// process table together with their alive containers, including currently
+// workload-less engines. Newly found engines get a short time to synchronize
+// with their workloads; failed engines are skipped. The optional pidmap
+// allows to determine engines running inside containers of other engines.
 func (f *TurtleFinder) EnginesInclContainers(
 	ctx context.Context, procs model.ProcessTable, pidmap model.PIDMapper,
 ) []*model.ContainerEngine {

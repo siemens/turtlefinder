@@ -70,6 +70,8 @@ In tests, prefer slice and collection helpers from `github.com/thediveo/nonstd` 
 
 Never add test code to explicitly remove or kill stale containers, as container cleanup is automatically handled by `morbyd`'s `session.WithAutoCleaning(...)`.
 
+Container engines nested inside test containers must not pull images from registries. Instead, load images from the test Docker engine using `internal/testimg.Load`, such as with `ctr image import -` (containerd), `podman load`, or `skopeo` (CRI-O).
+
 For temporary directories in Ginkgo specs, do not use `GinkgoT().TempDir()`; instead use the plain stdlib together with `DeferCleanup`, for example `tmpdir := Successful(os.MkdirTemp("", "mobydav-test-"))` followed by `DeferCleanup(os.RemoveAll, tmpdir)`.
 
 ## End-to-End Tests
@@ -101,18 +103,20 @@ Test suites must not be run in parallel.
 
 ## Required Command Style
 
+The `matchers` build tag is always required, as the root package tests use the build-tagged `matcher` package.
+
 Use these forms unless there is a documented reason not to:
 
 ```bash
-go test -race -p 1 ./...
-go test -race -p 1 -exec 'sudo -n' ./...
+go test -race -p 1 -tags matchers ./...
+go test -race -p 1 -tags matchers -exec 'sudo -n' ./...
 ```
 
 For focused package runs, keep the same constraints:
 
 ```bash
-go test -v -race -p 1 ./path/to/package
-go test -v -race -p 1 -exec 'sudo -n' ./path/to/package
+go test -v -race -p 1 -tags matchers ./path/to/package
+go test -v -race -p 1 -tags matchers -exec 'sudo -n' ./path/to/package
 ```
 
 ## Validation Expectation
